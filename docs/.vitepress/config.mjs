@@ -38,6 +38,7 @@ export default defineConfig({
           { text: 'Firmware updates', link: '/firmware-update' },
           { text: 'Running the AI features on Cloudflare\'s free tier', link: '/cloudflare' },
           { text: 'Sovol printers', link: '/sovol' },
+          { text: 'Snapmaker printers (U1)', link: '/snapmaker' },
         ],
       },
     ],
