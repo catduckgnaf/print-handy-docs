@@ -42,6 +42,7 @@ Do not run both Discord modes with the same token. Installing, enabling services
 - [Qidi printers](./qidi.md): the Klipper line (Q1 Pro, X-Plus 3, X-Plus 4, X-Max 3, X-Smart 3) on Moonraker, generating slicer profiles from your own OrcaSlicer, and what is not supported.
 - [Creality printers](./creality.md): the Klipper/Creality OS line (Ender-3 V3 series, K1 series) on Moonraker, generating slicer profiles from your own OrcaSlicer, why Marlin Enders are not this vendor, and what is not supported.
 - [Anycubic printers](./anycubic.md): the Klipper-based Kobra 2 family on Moonraker-exposed firmware (the stock-firmware caveat stated up front), generating slicer profiles from your own OrcaSlicer, why the Kobra 3 / S1 generation and the Marlin models are not this vendor, and what is not supported.
+- [Snapmaker printers](./snapmaker.md): the U1 tool changer on Moonraker, four toolheads, generic templates, and what is not supported.
 - [Read-only mesh topology audit](./mesh-audit.md): topology metrics, CLI usage, and manifold/watertight checks.
 - [100%-scale geometry layout and export](./geometry-layout.md): multi-object single-plate packing, status ladder, and geometry-only export boundaries.
 - [Opt-in reviewed CAD split plans and dowel connectors](./cad-split-plans.md): reviewed split presets, chamfered dowel generation, OpenSCAD CSG script synthesis, and post-boolean volume conservation checks.
