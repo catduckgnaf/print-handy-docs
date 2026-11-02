@@ -14,6 +14,11 @@ synced), applying the site's established transformations:
   a link to a directory (an extensionless target) becomes the tree URL
   (https://github.com/catduckgnaf/print-handy/tree/main/<path>) instead of
   surviving as a relative link the site cannot resolve,
+- a bare placeholder in prose, such as "on <date>" or "<state>/orca-profiles",
+  becomes "&lt;date&gt;": VitePress compiles each page as a Vue template, so
+  an unknown "<word>" outside code is an unclosed element that fails the
+  build. Code (fences and `spans`), real HTML tags, comments and <https://...>
+  autolinks are left alone,
 - the manifest's SHA-256 column is updated to the upstream file's hash.
 
 It also handles the two structural cases the manual process handles:
@@ -57,6 +62,17 @@ CONFIG = DOCS_DIR / ".vitepress" / "config.mjs"
 GITHUB_BLOB = "https://github.com/catduckgnaf/print-handy/blob/main/"
 GITHUB_TREE = "https://github.com/catduckgnaf/print-handy/tree/main/"
 LINK_RE = re.compile(r"\]\(([^)\s]+)((?:\s+\"[^\"]*\")?)\)")
+# HTML a guide may really use; any other "<name" in prose is a placeholder.
+HTML_TAGS = {
+    "a", "abbr", "b", "blockquote", "br", "code", "dd", "del", "details", "div", "dl", "dt",
+    "em", "figcaption", "figure", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "iframe",
+    "img", "ins", "kbd", "li", "mark", "ol", "p", "picture", "pre", "q", "s", "samp",
+    "small", "source", "span", "strong", "sub", "summary", "sup", "table", "tbody", "td",
+    "tfoot", "th", "thead", "tr", "u", "ul", "var", "video",
+}
+TAG_START_RE = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9-]*)")
+FENCE_RE = re.compile(r"^\s*(```|~~~)")
+CODE_SPAN_RE = re.compile(r"(`+)(.+?)\1")
 
 
 def sha256_of(path):
@@ -125,6 +141,45 @@ def rewrite_links(text, upstream_to_site):
         return f"]({new_target}{title})"
 
     return LINK_RE.sub(replace, text)
+
+
+def escape_placeholders(text):
+    """Escape bare "<placeholder>" prose for the Vue template compiler.
+
+    Lines inside fenced code blocks and text inside `code spans` are copied
+    as is; so are real HTML tags (HTML_TAGS), comments and <https://...>
+    autolinks. Every other "<" that starts a tag-like name becomes "&lt;"
+    (and its ">" is left, which Vue renders literally).
+    """
+    def prose(segment):
+        def replace(match):
+            name = match.group(2).lower()
+            rest = segment[match.end():match.end() + 3]
+            if name in HTML_TAGS or (name in ("http", "https", "mailto") and rest.startswith((":", "s:"))):
+                return match.group(0)
+            return "&lt;" + match.group(1) + match.group(2)
+        return TAG_START_RE.sub(replace, segment)
+
+    out, fenced = [], None
+    for line in text.splitlines(keepends=True):
+        fence = FENCE_RE.match(line)
+        if fenced:
+            out.append(line)
+            if fence and fence.group(1) == fenced:
+                fenced = None
+            continue
+        if fence:
+            fenced = fence.group(1)
+            out.append(line)
+            continue
+        parts, last = [], 0
+        for span in CODE_SPAN_RE.finditer(line):
+            parts.append(prose(line[last:span.start()]))
+            parts.append(span.group(0))
+            last = span.end()
+        parts.append(prose(line[last:]))
+        out.append("".join(parts))
+    return "".join(out)
 
 
 def add_sidebar_entry(site_name, title):
@@ -210,8 +265,8 @@ def main():
             strip_home_links(site_name)
             events.append(f"REMOVED: {upstream_name} (site: docs/{site_name})")
             continue
-        content = rewrite_links(
-            upstream_file.read_text(), upstream_to_site)
+        content = escape_placeholders(rewrite_links(
+            upstream_file.read_text(), upstream_to_site))
         if not site_file.exists() or site_file.read_text() != content:
             site_file.write_text(content)
             events.append(f"CHANGED: {upstream_name} (site: docs/{site_name})")
@@ -220,8 +275,8 @@ def main():
 
     for base, site_name in added:
         upstream_file = upstream_docs / base
-        content = rewrite_links(
-            upstream_file.read_text(), upstream_to_site)
+        content = escape_placeholders(rewrite_links(
+            upstream_file.read_text(), upstream_to_site))
         (DOCS_DIR / site_name).write_text(content)
         add_sidebar_entry(site_name, sidebar_title(upstream_file, site_name))
         new_rows.append([base, site_name, sha256_of(upstream_file)])
