@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "Print Handy"
-  text: "Prepare and manage 3D prints from Discord"
-  tagline: "Share a MakerWorld or Printables link, or upload an STL or 3MF — Print Handy guides you through preparation, filament choices and slicing, with an explicit confirmation before anything starts printing."
+  text: "Bambu Handy for every printer"
+  tagline: "Paste a MakerWorld or Printables link from your phone. Print Handy slices it, matches your spools, asks before it prints, watches the camera for spaghetti, and roasts your model on the way out. Works from the couch, the office, or the grocery store checkout line. We don't judge. The bot does."
   image:
     src: /logo.png
     alt: Print Handy
@@ -17,29 +17,37 @@ hero:
       link: https://github.com/catduckgnaf/print-handy
 
 features:
-  - icon: 📥
-    title: Guided intake
-    details: Take a MakerWorld or Printables link, or an uploaded STL or 3MF, through guided choices for colours, fit and supported layouts.
-  - icon: ✂️
-    title: Slicing built in
-    details: Slice with OrcaSlicer, or Bambu Studio for Bambu Lab printers, using the correct printer, process and filament profiles.
-  - icon: 🧵
-    title: Spoolman filament matching
-    details: Match loaded spools from Spoolman and keep spool identity, material and colour information consistent from intake to print.
+  - icon: 📱
+    title: Print from anywhere
+    details: Your slicer lives on a desk. You don't. Drop a link or upload an STL or 3MF in chat, pick colors with buttons, and the job is sliced and waiting for your OK before you're back from the fridge.
+  - icon: 🔥
+    title: Roasts included
+    details: Every print start comes with a one-line roast of your model. Another articulated dragon? Bold choice. Needs an AI endpoint, and you can turn it off if your ego is fragile.
+  - icon: 🍝
+    title: Spaghetti patrol
+    details: The camera watchdog checks frames for spaghetti, detached parts and stalls, then asks with Pause and It's fine buttons. Sometimes it really is fine. Sometimes it's modern art.
   - icon: ✅
-    title: Confirmation before printing
-    details: Nothing prints on its own. Confirm bed clearance and approve the exact sliced job before Print Handy submits it to the printer.
-  - icon: 📷
-    title: Camera watch & timelapses
-    details: While a print runs, the camera watchdog checks frames for spaghetti and other failures and posts an alert with Pause and It's fine buttons, alongside printer events and timelapses.
-  - icon: 💬
-    title: Discord, Telegram & Matrix
-    details: Run the same standalone bot on Discord, Telegram or Matrix — a pure bot with no LLM required in the print path.
+    title: Nothing prints behind your back
+    details: You check the bed and approve the exact sliced job before anything is sent. Lock approvals to one person if your friends have questionable taste.
+  - icon: 🧵
+    title: Spoolman, minus the spreadsheet
+    details: Spools are matched to slots, runouts ask what you loaded, and filament is charged to the right spool. Bookkeeping you'll actually keep.
+  - icon: 🖨️
+    title: Every printer, every chat
+    details: Klipper, Bambu Lab, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint. Discord, Telegram, Matrix or the Web UI. One Docker container, no slicer babysitting.
 ---
 
 [![CI](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml/badge.svg)](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml)
 [![GitHub releases](https://img.shields.io/github/v/release/catduckgnaf/print-handy)](https://github.com/catduckgnaf/print-handy/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/catduckgnaf/print-handy/blob/main/LICENSE)
+
+## Why this exists
+
+Bambu owners get a slick phone app: find a model, tap print, check on it from anywhere. Everyone else gets a slicer chained to a desktop, a USB stick, and a walk to the garage to see if the first layer stuck.
+
+Print Handy is that phone experience for everybody else, Bambu included. It lives in the chat app you already have open, so "print this" is one pasted link instead of a sit-down session with a slicer. It is also a little mean about your model choices, which is a feature.
+
+*Not affiliated with Bambu Lab. We just liked their app enough to want it on every other printer.*
 
 ## Start here
 

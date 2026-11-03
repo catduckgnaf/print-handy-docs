@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Print Handy',
-  description: 'Prepare and manage 3D prints from Discord, with an explicit confirmation before printing.',
+  description: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.',
   base: '/print-handy-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -10,8 +10,12 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/print-handy-docs/favicon.ico' }],
     ['link', { rel: 'apple-touch-icon', href: '/print-handy-docs/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#f97316' }],
-    ['meta', { property: 'og:title', content: 'Print Handy' }],
-    ['meta', { property: 'og:description', content: 'Prepare and manage 3D prints from Discord, with an explicit confirmation before printing.' }],
+    ['meta', { property: 'og:title', content: 'Print Handy: Bambu Handy for every printer' }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+    ['meta', { name: 'twitter:title', content: 'Print Handy: Bambu Handy for every printer' }],
+    ['meta', { name: 'twitter:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
+    ['meta', { property: 'og:image', content: 'https://catduckgnaf.github.io/print-handy-docs/logo.png' }],
+    ['meta', { property: 'og:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://catduckgnaf.github.io/print-handy-docs/' }],
   ],
