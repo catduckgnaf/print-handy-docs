@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Print Handy',
-  description: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.',
+  description: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.',
   base: '/print-handy-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -13,10 +13,10 @@ export default defineConfig({
     ['meta', { property: 'og:title', content: 'Print Handy: Bambu Handy for every printer' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'Print Handy: Bambu Handy for every printer' }],
-    ['meta', { name: 'twitter:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
+    ['meta', { name: 'twitter:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
     ['meta', { property: 'og:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
     ['meta', { name: 'twitter:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
-    ['meta', { property: 'og:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram, Matrix or the Web UI, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
+    ['meta', { property: 'og:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://catduckgnaf.github.io/print-handy-docs/' }],
   ],

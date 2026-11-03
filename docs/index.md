@@ -34,7 +34,7 @@ features:
     details: Spools are matched to slots, runouts ask what you loaded, and filament is charged to the right spool. Bookkeeping you'll actually keep.
   - icon: 🖨️
     title: Every printer, every chat
-    details: Klipper, Bambu Lab, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint. Discord, Telegram, Matrix or the Web UI. One Docker container, no slicer babysitting.
+    details: Klipper, Bambu Lab, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint. Discord, Telegram or Matrix, plus a Web UI for status, settings and spools. One Docker container, no slicer babysitting.
 ---
 
 [![CI](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml/badge.svg)](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml)
