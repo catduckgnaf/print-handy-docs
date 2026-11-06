@@ -2,6 +2,8 @@
 
 [Project overview](https://github.com/catduckgnaf/print-handy/blob/main/README.md) · [Contributing](https://github.com/catduckgnaf/print-handy/blob/main/CONTRIBUTING.md)
 
+**Local-first, by design.** Print Handy was made as a local-only solution: it runs on your own machine, reaches your printers at their local addresses, and keeps models, spool records and print history on your network. There is no Print Handy account and no Print Handy cloud. The chat app you pick still carries what you send through it (a model file, a photo, a timelapse) over that provider's servers, like any other message there; Print Handy adds no cloud of its own, and the doctor, the Web UI and a self-hosted Matrix room stay local. You do not need AI — every core flow works with no model endpoint configured — and you do not need Discord: the same bot runs on Telegram or Matrix instead, and the local Web UI covers status, settings and spools on the machine itself. The guides below are written for that shape; anything that reaches outside the house (a model site, an optional cloud model endpoint) says so where it happens.
+
 ## 1. Install one mode
 
 - [Standalone bot](./standalone.md): Discord without Hermes or a required LLM; token permissions, configuration, setup checks and systemd services. Needs a [Discord bot](./discord-bot-setup.md).
@@ -9,6 +11,7 @@
 - [Matrix bot setup](./matrix-bot-setup.md): run the standalone bot in a Matrix room instead (#164); a pure bot with no LLM, /sync polling, numbered-list prompts, unencrypted room required.
 - [Hermes installation](./install.md): profile installation, private overlays and listener setup.
 - [Docker](./docker.md): container configuration, persistent storage and service lifecycle. Follow the guide for the checked-out revision; do not assume a draft packaging PR is available.
+- [Component provenance and vulnerability inventory](./components.md): every pinned third-party component in the image and Compose file, where its pin lives, the weekly image SBOM and vulnerability report, and the review cadence and exception policy.
 - [More than one printer](./multi-instance.md): one instance per printer, kept as the alternative for hard process isolation, with one shared Spoolman. The default shape is one instance serving a whole roster — see [SETTINGS.md — Printers list](./settings.md#printers-list) and [MULTI-PRINTER-DESIGN.md](https://github.com/catduckgnaf/print-handy/blob/main/docs/MULTI-PRINTER-DESIGN.md).
 - [From the image to a first A1 print](./bambu-a1-docker.md): the Docker image on a Bambu Lab A1, step by step (#274): Compose overrides, A1 templates from the bundled OrcaSlicer, the hand-written hardware record, MakerWorld token, Discord, the LAN print opt-in and the fixes still pending. Verified on an A1 on 26 Oct 2026.
 
@@ -18,21 +21,22 @@ Do not run both Discord modes with the same token. Installing, enabling services
 
 - [YAML configuration and TOML migration](./configuration-yaml.md): schema, precedence and safety limits.
 - [Guided setup and debugging in Discord](./guided-setup-debugging.md): the `/print-handy setup` checklist (resumable, consent-gated, never collects the token) and the read-only, redacted `/print-handy debugging` checks.
-- [Web UI](./webui.md): the optional, off-by-default local page — status and doctor checks, the picker that writes the same YAML settings file, the read-only designs catalog, and a read-only sliced-layer view. It does not start a job.
+- [Web UI](./webui.md): the optional, off-by-default local page — first-run walkthrough, status and doctor checks, the picker that writes the same YAML settings file, spool management, the read-only designs catalog, and a read-only sliced-layer view. Printer controls are a separate opt-in and stay off by default.
 - [Live camera in Discord](./discord-bot-setup.md#7-live-camera-activity-optional-311): the optional Discord Activity live view (#311) — Developer Portal and named-tunnel setup, allowlist, privacy notes, and the honest verification status (the live spike has not run).
 - [Settings reference](./settings.md): every setting with its YAML key, environment variable and Docker value, plus Docker build arguments and secrets.
 - [Detailed project reference](./project-reference.md): workflow examples, commands, printer models, spool identity rules, monitoring and updates.
 - [Printer macros](./macros.md): `/print-macros` live macro discovery on Moonraker printers, and the per-vendor macro matrix.
 - [Firmware updates](./firmware-update.md): `/print-firmware` version reporting, guarded component updates on ZMod and vanilla Klipper, the guided ZMod base / stock firmware flows, and the per-family update matrix for every other printer.
 - [Printer calibration](./calibration.md): `/print-calibration` — the before/after accept pattern (before values, confirm, run idle-only, new values and differences, accept before anything saves), per-calibration notes for mesh, screws, PID, input shaper, belts and the Z-offset report/guide verdict, and calibration records.
-- [Printer profiles and offline delivery](./printer-profiles.md): vendor/model inheritance, supported delivery methods and verification limitations.
+- [Slicer warnings and the support question](./slicer-warnings.md): how Print Handy reads Orca's warnings after every slice, the one warning that asks (supports needed while supports are off: re-slice with supports, print without, or cancel), the compact information line for the rest, and the ignore list.
+- [Printer profiles and offline delivery](./printer-profiles.md): vendor/model inheritance, supported delivery methods, verification limitations, and what is kept from a 3MF made for another printer or slicer (#868).
 - [Printer support](./printer-support.md): what "supported" means for each printer, how to try one that is not listed, what a built-in printer consists of, and the hardware checklist for confirming a listed printer works.
 - [Optional Flash Studio slicer](./flash-studio.md): opt-in, user-installed Flash Studio executable for Flashforge printers; an empty path keeps the normal OrcaSlicer choice.
 - [Home Assistant panic and printer controls](https://github.com/catduckgnaf/print-handy/blob/main/docs/home-assistant-panic.md): direct, no-LLM AD5X/ZMod printer controls from a Home Assistant dashboard, including the emergency-stop panic restart; no extra daemon.
 - [Best practices on specific devices](./device-best-practices.md): per-printer recommended settings, the order to change them in, and what has been verified on hardware. Starts with [AD5X best practices](./device-ad5x.md): screenless with HelixScreen, ZMod version, Z offset, bed mesh and KAMP, Nopoop purge, QuickSwap order and risks, 3MF delivery.
 - [AD5X integration contract](./ad5x-contract.md): printer-specific behavior and limitations.
 - [ZMod printers](./zmod.md): all five ZMod models (AD5X, AD5M, AD5M Pro supported; Creator 5 / 5 Pro staged), and how their filament systems differ.
-- [Stock Flashforge printers](./flashforge-stock.md): the Adventurer 5X on factory firmware — the LAN HTTP API, IFS prints, the launched-print monitor, and timelapse from the camera source the printer advertises (the AD5X has no built-in camera; read the verification status before expecting a video).
+- [Stock Flashforge printers](./flashforge-stock.md): every Flashforge model listed with the route that applies to it — the Adventurer 5X on factory firmware has the built-in stock profile (the LAN HTTP API, IFS prints, the launched-print monitor, and timelapse from the camera source the printer advertises; the AD5X has no built-in camera, so read the verification status before expecting a video), while the AD5M, AD5M Pro, Creator 5 and Creator 5 Pro are ZMod-only today.
 - [OctoPrint/Marlin notes](./octoprint-marlin.md): read the integration-specific limits before assuming Moonraker feature parity.
 - [Sovol printers](./sovol.md): Klipper and Marlin/OctoPrint keys for the SV series, the SV08 family, and the Zero, with the build volume each key uses.
 - [Bambu Lab printers](./bambu-lab.md): profiles for every single-nozzle Bambu Lab printer (A1, A1 mini, P1P, P1S, P2S, X1, X1 Carbon, X1E, H2S), generating slicer profiles from your own OrcaSlicer, the G-code guard, opt-in read-only LAN status, unverified values, and the licensing basis awaiting approval.
@@ -48,6 +52,7 @@ Do not run both Discord modes with the same token. Installing, enabling services
 - [Opt-in reviewed CAD split plans and dowel connectors](./cad-split-plans.md): reviewed split presets, chamfered dowel generation, OpenSCAD CSG script synthesis, and post-boolean volume conservation checks.
 - [Running the AI features on Cloudflare's free tier](./cloudflare.md): chat and design through Workers AI's OpenAI-compatible endpoint, the camera watchdog and lookup by meaning through the two reference Workers in `examples/cloudflare`, free-tier limits with rough usage per feature, and what leaves the house. Mock-tested only; not yet run against a real Cloudflare account.
 - [AI design with OpenSCAD](./design.md): `/print-design` describes a part in chat, renders and measures it, and hands the approved STL to normal intake (#388).
+- [Editing a prepared model from chat](./editing.md): the confirmed, verified edit-plan vocabulary (supports, rotate, lay flat, scale, mirror, copies, brim, layer height, infill), AI-lane proposals from the same vocabulary, multi-part preservation, provenance and undo (#903).
 
 ## 3. Troubleshoot by symptom
 
@@ -70,6 +75,7 @@ Do not run both Discord modes with the same token. Installing, enabling services
 - [Multi-printer design](https://github.com/catduckgnaf/print-handy/blob/main/docs/MULTI-PRINTER-DESIGN.md): the #257 Stage 2 design for one instance serving many printers — audit of the one-printer assumptions, config/state/routing decisions, and the staged implementation plan. Design only; not implemented.
 - [Contribution workflow](https://github.com/catduckgnaf/print-handy/blob/main/CONTRIBUTING.md) and [pull request template](https://github.com/catduckgnaf/print-handy/blob/main/.github/PULL_REQUEST_TEMPLATE.md).
 - [Release-note guidance](https://github.com/catduckgnaf/print-handy/blob/main/docs/RELEASE-NOTES.md) and [internal release history](https://github.com/catduckgnaf/print-handy/blob/main/docs/INTERNAL_RELEASE_NOTES.md).
+- [Branding kit](./branding.md): the pitch, approved copy by length, voice rules, the catduck mascot, colors and assets. Copy from it whenever something describes Print Handy.
 - [Rename migration](https://github.com/catduckgnaf/print-handy/blob/main/docs/RENAME-MIGRATION.md) for older installations.
 - [CAD evaluation](https://github.com/catduckgnaf/print-handy/blob/main/docs/KICAD-EVALUATION.md) and [reuse map](https://github.com/catduckgnaf/print-handy/blob/main/docs/REUSE-MAP.md) for technical background, not promises of shipped capability.
 

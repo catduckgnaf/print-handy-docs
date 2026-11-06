@@ -46,7 +46,7 @@ Paths below assume the checked-out `docker-compose.yml`, a private `.env` beside
 2. Create the data directories the five declared volumes map to, plus one more, `dot-config`, for `/data/.config`:
 
    ```bash
-   mkdir -p data/hermes data/archive data/records data/cache data/spoolman data/dot-config
+   mkdir -p data/state data/archive data/records data/cache data/spoolman data/dot-config
    sudo chown -R 1000:1000 data
    ```
 
@@ -81,7 +81,7 @@ Paths below assume the checked-out `docker-compose.yml`, a private `.env` beside
    PRINT_HANDY_CONFIG=/data/config/print-handy.yaml
    ```
 
-   Bambu Lab printers default to Bambu Studio as the slicer, but the published image is built with `WITH_BAMBU=false` and has no `/usr/bin/bambu-studio`, so slicing would fail closed. `orca` selects the bundled OrcaSlicer v2.5.0-beta (`PRINT_HANDY_ORCA_CHANNEL=stable`, the default). `PRINT_HANDY_CONFIG` is read by Compose for variable substitution and names the file from step 6. Leave `PRINT_HANDY__SERVICES__MOONRAKER_URL` empty: settings refuse to load for a Bambu model when it is set.
+   Bambu Lab printers default to Bambu Studio as the slicer, but the published image is built with `WITH_BAMBU=false` and has no `/usr/bin/bambu-studio`, so slicing would fail closed. `orca` selects the bundled OrcaSlicer v2.5.0-rc (`PRINT_HANDY_ORCA_CHANNEL=stable`, the default; the one bundled build). `PRINT_HANDY_CONFIG` is read by Compose for variable substitution and names the file from step 6. Leave `PRINT_HANDY__SERVICES__MOONRAKER_URL` empty: settings refuse to load for a Bambu model when it is set.
 
 With `.env` complete (steps 4, 5 and 6 add the rest), start the container with `docker compose up -d` and watch `docker compose logs -f combined`. Nothing contacts the printer yet.
 
@@ -89,20 +89,20 @@ With `.env` complete (steps 4, 5 and 6 add the rest), start the container with `
 
 **Why:** the A1 slicer profiles are OrcaSlicer's and Bambu Lab's (AGPL-3.0) and are not shipped; Print Handy builds its templates from an installed OrcaSlicer and refuses to slice until it has them (see [Set up the A1 profiles](./bambu-lab.md#set-up-the-a1-profiles)).
 
-The image extracts the pinned OrcaSlicer v2.5.0-beta AppImage to `/opt/orca-stable` (`docker/orca-prebuilt.sh`), so its resources folder is `/opt/orca-stable/resources`. It holds the vendor profiles as a JSON tree (`profiles/BBL.json`, `profiles/BBL/`) and as the packed preset cache (`profiles/BBL.opc`); the generator reads either. Run the generator in the running container:
+The image extracts the pinned OrcaSlicer v2.5.0-rc AppImage to `/opt/orca-stable` (`docker/orca-prebuilt.sh`), so its resources folder is `/opt/orca-stable/resources`. It holds the vendor profiles as a JSON tree (`profiles/BBL.json`, `profiles/BBL/`) and as the packed preset cache (`profiles/BBL.opc`); the generator reads either. Run the generator in the running container:
 
 ```bash
 docker compose exec combined python3 scripts/bambu-templates.py --printer a1 --resources /opt/orca-stable/resources
 docker compose exec combined python3 scripts/bambu-templates.py --printer a1 --resources /opt/orca-stable/resources --check
 ```
 
-The first command reports `wrote Bambu Lab A1 Orca templates from OrcaSlicer 2.5.0-beta (BBL vendor profiles 02.08.00.16) to /data/hermes/state/orca-profiles/bambulab_a1`; `--check` writes nothing and should end with `matches; generated folder is current`. The templates live in the `hermes` volume, so they survive a recreate. Nothing is downloaded. `PRINT_HANDY_ORCA_CHANNEL=preview` currently installs the same v2.5.0-beta release as `stable`; the channels diverge again when upstream publishes a newer prerelease. (`alpha`, the preview channel's name before #600, is still accepted as an alias.)
+The first command reports `wrote Bambu Lab A1 Orca templates from OrcaSlicer 2.5.0-beta (BBL vendor profiles 02.08.00.16) to /data/state/state/orca-profiles/bambulab_a1`; `--check` writes nothing and should end with `matches; generated folder is current`. The templates live in the state volume, so they survive a recreate. Nothing is downloaded. Print Handy ships one bundled OrcaSlicer: `PRINT_HANDY_ORCA_CHANNEL=preview` (or `alpha`, the preview channel's name before #600) starts on the same single stable build with a startup notice, because the preview channel was removed.
 
 ## 3. Write the hardware record by hand
 
 **Why:** slicing, the color question and the readiness check read the installed nozzle and the loaded spool from `<hermes_home>/state/printer_hardware.json` (`print_handy/core/printer_state.py`). The `set --spool` command that normally fills it reads a Spoolman record and then writes the Moonraker active spool, neither of which exists in this setup, so the file is written by hand ([#263](https://github.com/catduckgnaf/print-handy/issues/263) covers the proper fix).
 
-Create `data/hermes/state/printer_hardware.json` on the host (the container sees it as `/data/hermes/state/printer_hardware.json`). This is a complete record for one black PETG spool with the stock 0.4 mm stainless steel nozzle:
+Create `data/state/state/printer_hardware.json` on the host (the container sees it as `/data/state/state/printer_hardware.json`). This is a complete record for one black PETG spool with the stock 0.4 mm stainless steel nozzle:
 
 ```json
 {
@@ -180,7 +180,7 @@ No restart is needed; the file is read on each MakerWorld request. A wrong or ex
 
 2. Post a MakerWorld or Printables model link in the channel. The bot replies with the model summary, then the questions:
    - **Colors.** A multi-part or painted model first asks `Choose colors for these parts or one color for everything?`; answer **One color for everything**. The A1 path is single colour (AMS Lite is not driven), so per-part colors would be refused at slicing. Then, for every model, `Choose the color for <model>` offers the slot labels from step 3; with one slot that is one button, `Black PETG`.
-   - **What to do with the slice.** The choices are `Slice and print now (bed is clear)` (only after step 6), `Slice only`, `Stop with colors saved` and `Cancel print request`. For the first run pick **Slice only**: it slices and verifies, and never touches the printer.
+   - **What to do with the slice.** The choices are `Slice and print now (bed is clear)` (only after step 6), `Slice only`, `Scale the model` and `Cancel print request`. For the first run pick **Slice only**: it slices and verifies, and never touches the printer. `Scale the model` asks bigger or smaller, then 1%, 5% or 10%, and repeats this question at the new size; a size that does not fit the bed is refused, and the bot offers the biggest size that does fit instead.
    - **Delivery.** After a `Slice only`, the delivery menu offers `Send the files here` (the G-code as a Discord attachment) and `Package for Bambu (no upload)`, which builds the `.gcode.3mf` in Bambu Studio's export layout. Each runs at most once per slice.
 
 3. Known limits on this step today:

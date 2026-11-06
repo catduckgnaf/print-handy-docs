@@ -20,9 +20,15 @@ Where this comes from:
 - `printers/registry/<vendor>.toml` (one file per vendor) is the data index of every registered model. `tests/test_knowledge.py::test_printer_registry_matches_code_profiles` fails if an entry drifts from its model.
 - The word `verified` in code is narrower than it sounds. Each sourced value in a vendor's `facts.py` is a `Fact(value, source, verified)` (for example class `Fact` in `print_handy/printers/qidi/facts.py`). `verified=True` means the value was read straight from its source, such as OrcaSlicer's printable area. It does not mean a printer was involved. The temperature ceilings, for instance, are recorded as unverified manufacturer figures.
 - `verified_slicers` on an adapter (`PrinterAdapter` in `base.py`) lists the slicers whose output that printer's G-code guard has been checked against. That is also about files, not hardware.
-- The docs state the hardware position in prose. The Qidi, Creality, Elegoo, Prusa, Snapmaker, ZMod and Bambu Lab guides each say nothing has been tested on that hardware (see [Qidi](./qidi.md), [Snapmaker](./snapmaker.md), [ZMod](./zmod.md), [Bambu Lab](./bambu-lab.md)). The one recorded exception is a single Bambu Lab A1 run on 26 Oct 2026: sliced, uploaded over FTPS, started, and the printer reported printing ([A1 walkthrough](./bambu-a1-docker.md), section 8). A hardware report is what would move a printer from the second level to the third, and the printer's guide is then updated by hand.
+- The docs state the hardware position in prose, per family and per model, in the vendor guides (see [Qidi](./qidi.md), [Snapmaker](./snapmaker.md), [ZMod](./zmod.md), [Bambu Lab](./bambu-lab.md)).
 
-A passing offline test is never a hardware test. Keep the confirmation and artifact guards on while you check anything.
+## How extensively is this tested?
+
+Extensively at the code level, and the depth is deliberate. The automated suite carries more than 5,800 tests, including dedicated per-family suites with recorded fixtures and golden slicer inputs for the ZMod Flashforge line (the AD5X above all), stock Flashforge, Klipper in general and the Klipper vendor lines (Sovol, Elegoo, Creality, Qidi, Anycubic, Snapmaker), Marlin behind OctoPrint, Bambu Lab LAN, PrusaLink and Elegoo SDCP. A shared adapter contract runs against every registered model, and registry parity tests fail if a model's documented facts drift from its code profile, so coverage grows with each printer added instead of being re-earned per model.
+
+Live evidence is narrower and is recorded where it exists: the AD5X on ZMod is the author's own daily printer, with a written tested baseline ([AD5X best practices](./device-ad5x.md#tested-baseline)), and a Bambu Lab A1 run on 26 Oct 2026 was sliced, uploaded over FTPS, started, and reported printing by the printer ([A1 walkthrough](./bambu-a1-docker.md), section 8). A hardware report is what moves a printer from the second level above to the third, and the printer's guide is then updated by hand.
+
+Extensive testing is still not a hardware test of your printer. Keep the confirmation and artifact guards on while you check anything.
 
 ## Your printer is not listed
 
@@ -77,7 +83,7 @@ Do this only on a printer you own and are watching. Start with a small, flat tes
 
 **Setup**
 
-1. **Model and numbers.** `printer.model` is the key for your printer. Bed size, height and nozzle in the settings match the machine. Compare against your slicer's own profile. Pass if they agree within a millimeter.
+1. **Model and numbers.** `printer.model` is the key for your printer. Bed size, height and nozzle in the settings match the machine. Compare against your slicer's own profile. Pass if the bed size and height agree within a millimeter and the configured nominal nozzle diameter matches the installed nozzle exactly — a different nominal diameter is a different nozzle for slicing, not a rounding difference.
 2. **Doctor.** `python3 -m print_handy.doctor` (or `/print-handy debugging` in chat) reports the printer reachable and no blocking errors. The doctor contacts your configured services.
 3. **Slicer output.** Slice the test part and open the G-code. The first lines are your printer's real start sequence (for the Klipper vendors, a call to the printer's own start macro; for Bambu Lab, the vendor start block). Temperatures match the filament. Every move is inside the bed. The guard did not refuse the file. Pass if the output matches what the vendor's own slicer profile would produce.
 
