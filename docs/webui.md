@@ -7,7 +7,7 @@ The Web UI is an optional local page for two jobs:
 - **Status:** whether Print Handy, its bot, printer listener and Spoolman are up, plus the doctor checks.
 - **Configuration:** a picker-based editor for the catalogued settings in the same YAML settings file Print Handy already loads.
 
-It is **off by default**. While `[webui] enabled` is false, or no port has been chosen, the standalone server does not start and nothing listens. In the combined Docker container, the supervisor likewise starts no Web UI child in that state.
+It is **off by default**. While `[webui] enabled` is false, or no port has been chosen, the standalone server does not start and nothing listens. In the combined Docker container, the supervisor likewise starts no Web UI child in that state. For access setup, continue to [First-run setup](#first-run-setup).
 
 The YAML file remains the only source of truth. The Web UI does not keep a second copy of the configuration: its status comes from the effective settings, and a confirmed configuration save writes only the settings-file layer — the file named by `PRINT_HANDY_CONFIG`, or `config/local.yaml` when no file is named. See [YAML configuration](./configuration-yaml.md) for the full precedence order.
 
@@ -20,11 +20,17 @@ The YAML file remains the only source of truth. The Web UI does not keep a secon
 | `GET /api/status` | The same status snapshot as JSON |
 | `GET /api/printers/<id>/status` | One roster printer's live status as JSON: its identity plus the adapter's normalized status (`state`, `filename`, `progress`, temperatures, and any target/ETA/layer fields that printer's adapter reports). An unknown id is a 404; a printer that cannot be reached answers with `state: "unavailable"` instead of an error |
 | `GET /healthz` | The standalone bot heartbeat verdict: `200` when it passes, `503` when it does not |
+| `GET /readyz` | Per-component readiness as JSON: `spoolman`, `slicer` and one `printers.<id>` row each, plus `ready`. `200` when no component is known to be down, `503` when one is. Same access token as `/api/status` |
 | `GET /designs` | The read-only designs catalog (#388): AI design sessions on disk, newest first |
 | `GET /designs/<id>` | One design session: its final `.scad` source and file downloads |
 | `GET /designs/<id>/<scad\|stl\|preview>` | That session's `.scad`, final `.stl`, or preview PNG download |
 | `GET /layers` | Read-only list of sliced plates already in the archive |
 | `GET /layers/<job>/<n>?layer=N` | Plate number `n` of that job (0 is the first), colored by extrusion role |
+| `GET /walkthrough` | The first-run walkthrough (#813), while it is pending for this install |
+| `POST /walkthrough` | One walkthrough step's action (continue, skip, back, finish) |
+| `GET /theme?set=dark\|light&back=<path>` | The header theme toggle: remembers the choice in the `ph-theme` cookie and redirects back |
+
+Every page renders through one shared shell (#813): the same header (Print Handy brand, navigation over the pages above, and a Dark/Light toggle), the same stylesheet, and the same layout on the status, configuration, spools, designs, layers, login, setup and walkthrough pages. **Dark is the default theme.** The toggle stores the choice in a browser cookie (`ph-theme`, one year, this browser only) — it is a presentation preference, not a setting: no settings-file key or environment variable mirrors it, and it works with JavaScript disabled. The status page opens with an overall card — **All good** or **Attention needed**, with the doctor checks' warning and failure counts — above the same status tables as before. While the default printer is printing or paused, the card also shows the job's file name, progress, layer count and estimated time left, read live from the printer for the page only (the `/api/status` JSON does not gain the read, and a printer that cannot be reached simply leaves the card as it was).
 
 ### Designs page
 
@@ -49,13 +55,17 @@ The status page reports:
 - the other configured service URLs; and
 - the doctor checks as rows, each with an `ok`, `skip`, `fail`, or `warn` status and its detail.
 
+The status page also lists the newest archived slice-failure folders under "Recent model failures", and `/api/status` carries them as `slice_failures` (folder name, local path, modified time). The folders hold a failed model's raw slicer logs; the page shows where they are and does not serve them (#817).
+
 With a multi-printer roster configured, the status page also lists the roster read-only — each printer's id, name, model, connection, channel and endpoint — and `/api/status` carries the same rows under `printers`.
 
-For external consumers (the Home Assistant integration, dashboards), `GET /api/printers/<id>/status` serves one printer's live status (#664): the same identity fields as a roster row plus a `status` object holding the printer adapter's normalized status, read live through that printer's own connection — `state`, `filename`, `progress`, `hotend_c`, `bed_c`, and, where the adapter provides them, `hotend_target_c`, `bed_target_c`, `remaining_min`, `layer` and `total_layer`. It sits behind the same access-token auth as `/api/status` and is read-only — it sends nothing to the printer. An unknown id is a 404. A configured printer that is offline or unreachable still answers 200 with `status.state` set to `"unavailable"` and a `detail`, so a consumer polling every printer does not lose the whole poll to one dead machine; a printer on the `offline` connection reads the same way. **Stage 2e decision (#337): the roster is not editable here.** The field catalog addresses global fields only in this version, so per-printer changes stay where the roster is declared: the config file, the CLI setup wizard, or the guided setup's review step. A per-printer addressing scheme for the catalog is a future stage's decision, deliberately not pre-empted by this one.
+For external consumers (the Home Assistant integration, dashboards), `GET /api/printers/<id>/status` serves one printer's live status (#664): the same identity fields as a roster row plus a `status` object holding the printer adapter's normalized status, read live through that printer's own connection — `state`, `filename`, `progress`, `hotend_c`, `bed_c`, and, where the adapter provides them, `hotend_target_c`, `bed_target_c`, `remaining_min`, `layer` and `total_layer`, plus the always-present exclude-object keys `current_object`, `objects` and `excluded_objects` (ha-print-handy #1; empty for families that do not report objects). It sits behind the same access-token auth as `/api/status` and is read-only — it sends nothing to the printer. An unknown id is a 404. A configured printer that is offline or unreachable still answers 200 with `status.state` set to `"unavailable"` and a `detail`, so a consumer polling every printer does not lose the whole poll to one dead machine; a printer on the `offline` connection reads the same way. **Stage 2e decision (#337): the roster is not editable here.** The field catalog addresses global fields only in this version, so per-printer changes stay where the roster is declared: the config file, the CLI setup wizard, or the guided setup's review step. A per-printer addressing scheme for the catalog is a future stage's decision, deliberately not pre-empted by this one.
 
 The Web UI doctor rows reuse the local doctor checks — settings, printer model, Orca templates, core modules, hardware record, Orca CLI, configured Moonraker and Spoolman services, bot mode, and stray state files. Two command-line doctor checks are deliberately not run by the page: Discord login and the shared-token comparison. Both need the bot token, and the login check can make a live network call; run `python3 -m print_handy.doctor` when you want those checks.
 
 `/healthz` is narrower than the status page. It evaluates the bot heartbeat only: a `503` can mean the bot heartbeat is missing or stale while the Web UI itself is still serving. The Docker healthcheck therefore treats either a `200` or a `503` answer from `/healthz` as proof that the Web UI is serving, while the separate bot row owns the heartbeat verdict. An unreachable Web UI, an unresolved configuration, or any other HTTP status makes the Web UI healthcheck row fail.
+
+`/readyz` (also the `components` block of `/api/status`) splits readiness so one dependency cannot mask another. `spoolman` is the same probe as the Spoolman row. `slicer` checks that the configured primary slicer executable (`[slicer] flash_studio_path`, else the `[orca]` or `[bambu]` command for `[printer] slicer`, with `PRINT_HANDY_ORCA_CMD` overriding the `[orca]` command exactly as it does for slicing) resolves on `PATH`; it is not run, so `python3 -m print_handy.doctor` remains the full slicer check. Each `printers.<id>` row comes from that printer's own listener heartbeat: `true` when the listener reports the printer connected, `false` when the listener is running but the printer is not, and `null` (unknown) when there is no listener or it is down. Nothing is sent to any printer. Unknown and not configured rows do not fail `ready`. `/readyz` builds only these rows, without the doctor checks, so polling it never launches the slicer. `/healthz` and the Docker healthcheck stay liveness only, so an offline printer never makes the container unhealthy or triggers a restart.
 
 ## Enable it on a native or manual install
 
@@ -129,12 +139,37 @@ The published Community Applications template is separate from the in-repo templ
 
 ## First-run setup
 
+1. Enable the Web UI and choose an available port in the settings or deployment template.
+2. Open its local address. On first visit, set a password or explicitly choose LAN access without one.
+3. Use the status page to review service health; use Configuration to edit supported settings.
+
+The UI does not start prints. Printer control endpoints are a separate opt-in described below.
+
 A Web UI on a non-loopback bind with no access token, no `require_auth = false`, and no saved choice starts in setup mode (#708). Until a choice is made it serves only `/setup` (and `/healthz` for the container healthcheck): page visits redirect there, and API requests answer `503` with `first-run setup is not finished`. The setup page offers two forms:
 
-- **Set a password** (at least 8 characters, typed twice). The password is stored only as a salted PBKDF2-SHA256 hash in `webui_access.json` in the Print Handy state folder (in Docker, under `/data`, so it survives updates). The browser that set it is signed in. Afterwards the login page asks for it, and API clients such as the Home Assistant integration send it as the `X-WebUI-Token` header, exactly like an access token.
+- **Set a username and password** (#875; the username has no spaces or colons, the password at least 8 characters, typed twice; 12 or more, such as three or four unrelated words, is better, and a common password, one equal to the username, or one with fewer than four distinct characters is refused). The login page then asks for both. A password saved before usernames existed keeps working with any name. The password is stored only as a salted PBKDF2-SHA256 hash in `webui_access.json` in the Print Handy state folder (in Docker, under `/data`, so it survives updates). The browser that set it is signed in. Afterwards the login page asks for it, and API clients such as the Home Assistant integration send it as the `X-WebUI-Token` header, exactly like an access token.
 - **Leave it open:** tick the box confirming that anyone who can reach the port may use the Web UI. Nothing else is shown until the box is ticked.
 
-The form carries the page's `_csrf` token, so another site cannot answer setup for you. Anyone on your network who reaches the page first can complete it, so do it right after the first start. To change the choice later, delete `webui_access.json` from the state folder and restart (setup runs again), or set an access token in the environment, which always takes precedence over the saved choice.
+The form carries the page's `_csrf` token, so another site cannot answer setup for you. Anyone on your network who reaches the page first can complete it, so do it right after the first start. To change the choice later, use the walkthrough's **Login** step, or delete `webui_access.json` from the state folder and restart (setup runs again). A saved username and password is what the login page asks people for; an access token in the environment is still accepted alongside it, so header clients keep working and the token signs you in after a forgotten password. A saved "open" choice does not override a token.
+
+## First-run walkthrough
+
+Once access is chosen, every install is offered the first-run walkthrough (#813, #875) at `/walkthrough`: six steps — **Printer**, **Chat**, **Camera**, **Login**, **Providers**, **Review** — covering the settings a first print needs. While it is unfinished, the first browser to open the status page is sent to the walkthrough once; after that the status page shows a **Finish setting up Print Handy** banner until it is done; every other page stays reachable, and nothing is trapped. Progress is kept in `webui_walkthrough.json` in the state folder, so leaving and coming back resumes at the step you left.
+
+- **Printer:** the printer's name, its model, the connection address the model uses (a Moonraker or OctoPrint URL, a Bambu LAN host and serial, a PrusaLink host, or a stock Flashforge / Elegoo SDCP host), and the ZMod delivery format on Flashforge printers. The name is edited where it lives: as `[printer] name` on an install without a printer roster (the configuration page has the same field), or in place in the default printer's roster entry — renaming changes the display name only, never the printer's id. A name set by an environment variable or in your own settings file is shown disabled with the reason, exactly like any other field.
+- **Chat:** the bot platform and mode, and the chosen platform's channel and allowed users.
+- **Camera:** the camera source and snapshot address, and the timelapse essentials.
+- **Login:** who may open the Web UI. Choose a new username and password (typed twice), or tick the box to remove the login on a network you trust. Leaving the fields empty keeps the current choice. To skip logins entirely, set `webui.require_auth = false` instead.
+- **Providers:** nothing to fill in. The step lists the model sites and which are connected; a site's token lives in a file or an environment variable, and the bot asks for it in chat the first time a link needs it. Printables needs no account.
+- **Review:** the values now in effect for the settings above, then **Finish setup**.
+
+Each step saves through the same validated write as the configuration page when you continue (fields an environment variable or your own settings file overrides are shown disabled, exactly as on `/config`), and each step can be skipped; **Skip setup** on any step ends the walkthrough without finishing it. Like every Web UI save, changes take effect after a restart.
+
+Every install is offered the walkthrough once, however access was resolved (an access token in the environment, a loopback bind, `require_auth = false`, or the setup page). The redirect happens only once; afterwards the banner is the only reminder, and **Skip setup** stops it for good. To run it again, use **Restart setup** at the bottom of `/config`; nothing is reset, and every step starts from the current settings.
+
+## Printers and spools pages
+
+`GET /printers` lists the printer roster with each printer's name, model and connection, and has an **Add a printer** form that appends a new entry to the roster. When more than one printer is configured, each spools page shows a printer switcher. With exactly one printer, `GET /spools` goes straight to that printer's spools page instead of showing a one-item list.
 
 ## Access token and browser access
 
@@ -152,13 +187,27 @@ The token's value is a secret held only in the environment variable named by `we
   curl -H "X-WebUI-Token: $WEBUI_ACCESS_TOKEN" http://127.0.0.1:8080/api/status
   ```
 
-- A missing or wrong header on an API request returns `401` JSON with `missing or wrong X-WebUI-Token`. A browser navigation (a GET for a page with `Accept: text/html`) redirects to `/login` instead (#440).
+- A missing or wrong header on an API request returns `401` JSON with `missing or wrong X-WebUI-Token`. Wrong tokens count toward the same per-address failed-attempt limit as the login form: after 5 wrong tokens in 5 minutes the address gets `429` with a `Retry-After` header for 60 seconds, and even the correct token is refused during that time. A request with no header is not a guess and is not counted. The counter is in memory and resets on restart. A browser navigation (a GET for a page with `Accept: text/html`) redirects to `/login` instead (#440).
 
-**Browser sign-in:** a normal browser cannot add a custom header to an address-bar request, so browsers sign in at `/login` instead. Open the Web UI address (the Unraid **WebUI** link lands on `/`, which redirects to the login page while signed out), enter the access token, and the server sets a `webui_session` cookie (`HttpOnly`, `SameSite=Strict`) that authorizes page views (`GET` requests) for 12 hours. Sessions live only in the server's memory, so restarting the server signs everyone out; `POST /logout` ends your own session immediately. With no token configured there is nothing to sign in to and `/login` simply redirects to the status page. Scripts and API clients keep using the `X-WebUI-Token` header exactly as above — the cookie is a browser convenience, not a second token. There are no user accounts and no HTTPS listener, so do not remove the token from a LAN-reachable bind just to make a page load.
+**Browser sign-in:** a normal browser cannot add a custom header to an address-bar request, so browsers sign in at `/login` instead. Open the Web UI address (the Unraid **WebUI** link lands on `/`, which redirects to the login page while signed out), enter the access token, and the server sets a `webui_session` cookie (`HttpOnly`, `SameSite=Strict`) that authorizes page views (`GET` requests) for 12 hours. Sessions live only in the server's memory, so restarting the server signs everyone out; `POST /logout` ends your own session immediately. With no token configured there is nothing to sign in to and `/login` simply redirects to the status page. Scripts and API clients keep using the `X-WebUI-Token` header exactly as above — the cookie is a browser convenience, not a second token. There is one saved login at most (no multi-user accounts) and no HTTPS listener, so do not remove the token from a LAN-reachable bind just to make a page load.
+
+The session cookie and the `ph-theme` cookie omit the `Secure` attribute unless `[webui] cookie_secure` is true. The default is false so a plain-HTTP browser on the LAN still stores the cookie. Set it true only when every browser that should keep the session reaches the Web UI over HTTPS. The flag does not turn on TLS and does not change who may log in.
 
 Configuration form posts have a second, narrower credential: the server generates a form token when it starts, keeps it only in memory, and embeds it as the `_csrf` hidden field. A `POST` is accepted with either the `X-WebUI-Token` header or that form token. The form token is not the access token and does not authorize `GET` requests, and a session cookie alone never authorizes a post either — a signed-in browser still submits the form's own `_csrf` value. On loopback with no access token configured, the form token is still required for posts, so another page in the operator's browser cannot silently submit configuration changes.
 
-Keep the Web UI on a trusted LAN or reach it over a VPN. Never forward its port from a router or expose it directly to the public internet.
+## Where the Web UI may be reached
+
+The Web UI has no HTTPS listener of its own. Put it where the network already limits who can open the port.
+
+| Boundary | Supported | Cookie setting |
+|---|---|---|
+| Loopback (`127.0.0.1` or `localhost`) | Yes. The default bind. Only the same machine can connect. | Leave `cookie_secure` false. |
+| Trusted LAN, plain HTTP | Yes. Bind a LAN address or `0.0.0.0` and publish the container port only on that network. | Leave `cookie_secure` false. A `Secure` cookie is not stored by a browser that loaded the page over HTTP, so the login would not stick. |
+| VPN that places you on that LAN | Yes. Treat it as the LAN above. The VPN is what admits you; Print Handy does not see it. | Same as the LAN. |
+| HTTPS reverse proxy on that LAN or VPN | Yes, if the proxy is the only public name and it forwards to the Web UI over the private network. Terminate TLS at the proxy. Leave the Web UI on plain HTTP behind it. | Set `cookie_secure` true (`PRINT_HANDY__WEBUI__COOKIE_SECURE=true`). Browsers then send the session and theme cookies only on HTTPS requests to the proxy. |
+| Router port forward, or the Web UI published directly on the public internet | No. Do not forward the Web UI port and do not publish it as a public HTTP service. | Not a supported configuration. `cookie_secure` does not make a public bind safe. |
+
+`cookie_secure` is a file or environment decision, not a field on the configuration page. Restart after changing it. Authentication (`require_auth`, the access token, or first-run setup) is separate and stays as configured.
 
 ## Use the configuration page
 
@@ -235,7 +284,7 @@ If the selected settings file is a legacy TOML file, the Web UI refuses to rewri
 | `webui: not started: [webui] enabled is false` | Set `webui.enabled` to `true` in the effective settings file, or `PRINT_HANDY__WEBUI__ENABLED=true`; then restart the process/container. |
 | `webui: not started: [webui] port is 0 (unset)` | Port `0` means no port has been chosen. Set `webui.port` (the container uses `8088`), then restart. |
 | `webui gate: ... first-run setup is waiting` or `503 first-run setup is not finished` | Open the Web UI in a browser and choose a password or leave it open on the setup page. See [First-run setup](#first-run-setup). |
-| Forgot the setup password | Delete `webui_access.json` from the Print Handy state folder (Docker: under `/data/hermes/state`) and restart; the setup page appears again. |
+| Forgot the setup password | Delete `webui_access.json` from the Print Handy state folder (Docker: under `/data/state/state`) and restart; the setup page appears again. |
 | `401` with `missing or wrong X-WebUI-Token` | In a browser, open `/login` and enter the access token (sessions last 12 hours and end when the server restarts). For scripts, send the exact token value in the `X-WebUI-Token` header. See [Access token and browser access](#access-token-and-browser-access). |
 | `403` with `missing or wrong form token` on a configuration post | Load `/config` from the running server and submit its own form, so the current in-memory `_csrf` value is included. Restarting the server creates a new form token, so an old page must be reloaded. |
 | The Docker container stops after enabling the Web UI | Read the container log for the gate or server refusal. An unresolved settings file still stops the container; a non-loopback bind with no `WEBUI_ACCESS_TOKEN` does not (it starts in first-run setup, #708). Fix the named setting and restart. |
@@ -261,9 +310,44 @@ Guard:
 - **target** takes `{"hotend_c": <°C> | null, "bed_c": <°C> | null}`, the body the Home Assistant integration (ha-print-handy) sends: both heaters in one call, `null` leaving that heater alone, at least one a number. Same limits as `temperature`; every value is checked before anything is sent, so one bad value sends nothing. If the second heater fails after the first was sent, the 502 reason names what was already sent.
 - Every control re-reads the printer first. An unknown id is a **404** in the status route's shape, an unreachable printer an explicit **502**, and a printer in the wrong state (resume while printing, say) a **409**; none of them send anything. If the printer is reached but refuses the command (Moonraker answers an invalid transition with HTTP 400, for instance when someone paused from the printer screen a moment earlier), Print Handy reads the printer again: if it already shows the result (paused after pause, printing after resume, no longer printing or paused after cancel) the answer is **200** and says so; otherwise it is a **409** naming the state it now reports. A refused command is never resent, and a printer error (HTTP 5xx) stays a **502**.
 
+### Power, send-G-code and exclude-object (ha-print-handy #1)
+
+Three more control routes sit under the same guard — same off-by-default `controls_enabled` switch, same `X-WebUI-Token` header-only auth, same JSON-only bodies. They exist so the Home Assistant integration can offer them; two of them deliberately reverse #708 presumptions at catduck's direction: emergency stop no longer stays chat-side only, and raw G-code is no longer out of scope for the API.
+
+- **`POST /api/printers/<id>/emergency_stop`**, **`/firmware_restart`** and **`/server_restart`** each need the body `{"confirm": true}` (400 without it). They call Moonraker's `/printer/emergency_stop`, `/printer/firmware_restart` and `/server/restart` — the same endpoints the chat panic ladder uses. Emergency stop has **no state gate**: it sends from any state the printer can be read in, printing included. Server restart's pre-read is best-effort, because Moonraker rejects the status query while Klippy is disconnected and server restart is the recovery control for exactly that failure — the restart request itself decides whether Moonraker is reachable. No other printer family exposes a verified stop or restart capability in its adapter or client code, so every other family answers **501** ("not supported") and nothing is sent; no behavior is invented for them.
+- **`POST /api/printers/<id>/gcode`** takes `{"script": "<G-code text>"}` and sends raw G-code. A missing, non-string, empty, or over-2048-character script is a **400** and sends nothing. Moonraker printers receive the script through `/printer/gcode/script`; OctoPrint printers receive one command per non-empty line through `/api/printer/command`, the endpoint OctoPrint's client already uses for its temperature commands. Every other family answers **501**.
+- **`POST /api/printers/<id>/exclude`** takes `{"object": "<name>", "confirm": true}` and excludes one named object from the running print. It is Moonraker only — exclude-object is a Klipper feature, so other families answer **501**. The decision follows the same plan chat builds (`core.exclude_object.exclude_plan`) over the live status: excluding the **last remaining object** answers **409** and sends nothing (cancel the whole print instead), an unknown or already-excluded name answers **400**, and a missing `confirm` answers **400** naming the requirement. A confirmed exclude sends `EXCLUDE_OBJECT NAME=<name>` to the printer.
+
+So dashboards can offer exclude-object, `GET /api/printers/<id>/status` now also carries the object data for Moonraker printers: `current_object` (the object printing now, or `null`), `objects` (the defined object names) and `excluded_objects` (the names already excluded). Like the #708 telemetry keys, all three are always present — `null` / empty for families that do not report objects.
+
 ```bash
 curl -X POST -H "X-WebUI-Token: $WEBUI_ACCESS_TOKEN" -H "Content-Type: application/json" \
      -d '{"confirm": true}' http://127.0.0.1:8765/api/printers/flashforge-ad5x/cancel
 ```
 
 Still open from #708: Docker defaults, Bearer auth, extended telemetry, and the camera proxy.
+
+## Spool management (#789)
+
+`GET /api/printers/<id>/spools` is the loaded view as JSON: the printer's slots with their assigned spool (id, name, material, color, remaining weight, and percent left where the spool's starting weight is recorded — never estimated), plus the unassigned spools on the shelf. Assignments are read from the Spoolman `ph_slot` extra field (#798), the reconciled state, with the local slot cache as the fallback; duplicate or archived claims are named in the response's `conflicts` list instead of silently picking a winner. An unknown id is a 404 — every spool operation names its printer, and none falls back to a default printer.
+
+`POST /api/printers/<id>/spools/<action>` makes the changes, through the same operations Discord uses — Spoolman owns spool records, Print Handy owns slot assignment, and no surface keeps a second state store:
+
+| Action | Body | What it does |
+| --- | --- | --- |
+| `assign` | `{"slot": 1, "spool_id": 7}` | Binds the spool to the slot through `spool_sync.bind_slot`; a replaced spool goes back on the shelf. |
+| `swap` | `{"slot_a": 1, "slot_b": 2}` | Swaps the two slots' spools through `spool_sync.swap_slots`; one side may be empty (a move). |
+| `unassign` | `{"slot": 1}` | Empties the slot through `spool_sync.unbind_slot`: the spool's `ph_slot` claim is cleared, its location becomes the shelf, and the local slot record is removed. |
+| `add` | `{"brand": ..., "material": ..., "color": ..., "grams": 1000}` | Creates one spool on the shelf through `spool_sync.create_spool` (the #512 creation path, without the chat walkthrough). |
+| `edit` | `{"spool_id": 7, "remaining_weight": 321}` | Writes the spool's Spoolman record: remaining weight and `archived` on the spool itself; `name`, `material`, `color`/`color_hex` and `brand` on its filament record — the record Spoolman's own UI edits, shared by every spool of that filament type. Only the fields present are written. |
+| `sync` | `{}` | Runs `spool_sync.reconcile` for the printer: Spoolman's assignments rebuild the local slot state and the screens converge. |
+| `purchase/propose` | `{"url": "https://..."}` | The #801 hook: proposes spools from a shop/order link through `purchase_intake.propose_from_link`. Creates nothing. |
+| `purchase/create` | `{"lines": [...]}` | Creates the proposed lines on the shelf through `purchase_intake.create_purchase`, after re-validating them. This is the confirm step; call it only with lines the operator has seen. |
+
+Guard: the POSTs follow the printer controls' posture — the `X-WebUI-Token` header only (a login session never authorizes one), JSON bodies only, and `[webui] controls_enabled` must be true: while it is off every spool POST answers 403 and changes nothing. Refusals are named in the response: an unknown spool or slot, a reconcile conflict, or an archived spool is a 409 with the reason; a malformed body is a 400. Assignment changes during a print behave exactly as they do from Discord — the write is an inventory change whose screen push defers until the print ends; no new mid-print rule is invented here.
+
+The purchase-link actions additionally need an AI route (`PRINT_VISION_URL` or `services.vision_chat_url`), #801's gate: with none configured, `purchase/propose` refuses naming why, and the Spools page shows that reason instead of the form.
+
+`/spools` in the browser lists the configured printers; `/spools/<id>` is that printer's Spools page — the same loaded view and shelf, with assign/swap/unassign/add forms using pickers (no raw ids typed by hand), the Spoolman record edit form, a sync button, and the paste-a-link purchase action with its propose-then-confirm steps. The page's forms post under the same form-token rule as the configuration page.
+
+Browser pages never answer with a raw JSON dump (#840): when Spoolman is down the Spools page renders a themed error page at the same 502 status (the JSON shape is kept for `/api/printers/<id>/spools` only), and an unknown printer id gets a themed 404 with a link back to the printer picker. Operator-facing spool wording is plain — exception details go to the server log, not the page. A successful spool form post redirects back to the page with the result as its notice (Post/Redirect/Get), so reloading never repeats the action; refusals and the purchase proposal keep their direct render. The same themed refusal covers the other browser forms (`/config`, `/walkthrough`, `/setup`, `/debug`, `/spools`): a form left open across a Print Handy restart is told the page is out of date and to reload, and a `/debug` validation error re-renders the status page with the error on it. Every page carries the shell's one small script: on submit it asks for confirmation where a form or button says so (Unassign, Swap, debug Turn off), and disables the form's buttons — labeling the clicked one with its pending text — so a slow action (Read the purchase, Sync, Create these spools) cannot be sent twice. With JavaScript disabled the pages behave exactly as before.

@@ -25,15 +25,7 @@ and in what order.
 Recommendation: run ZMod screenless (`display_off=1`) and use HelixScreen,
 Fluidd or Mainsail as the local interface.
 
-> **Printing from chat screenless (2.2.0).** HelixScreen setups are
-> screenless too: HelixScreen runs on screenless ZMod. Print Handy starts a
-> screenless print the same way ZMod's own print-file macro does on the AD5X,
-> with one `SET_ZCOLOR` call, and checks it from Klipper alone: idle state and
-> heater targets from Moonraker, slot material and color from `zmod_color`,
-> and slot presence from `zmod_color`'s `hasFilament` (the stock firmware's
-> API does not answer screenless). This route is offline-tested only; the
-> first screenless print from chat is its live check. Report what you see on
-> the issue tracker.
+> **Printing from chat screenless.** HelixScreen setups are screenless too. Print Handy starts a screenless print the same way ZMod's own print-file macro does on the AD5X, with one `SET_ZCOLOR` call, and checks it from Klipper alone: idle state and heater targets from Moonraker, slot material and color from `zmod_color`, and slot presence from `zmod_color`'s `hasFilament` (the stock firmware's API does not answer screenless). Issues #842 and #843 were closed after the first live screenless print was reported. That is user-reported hardware evidence, not a general verification claim for every AD5X setup.
 
 Why it works better with Print Handy:
 
@@ -146,11 +138,11 @@ goes. Print Handy reads it live and slices to match.
 
 | Value | ZMod behaviour | Print Handy |
 | --- | --- | --- |
-| `1` (default) | Purges into the trash chute on every colour change | Slices as before: the prime tower only primes |
+| `1` (default) | Purges into the trash chute on every color change | Slices without a prime tower and reserves no tower room in the fit check (override with `purge.prime_tower`) |
 | `0` (Nopoop) | No chute purge; the slicer purges into the prime tower | Slices with purge in the prime tower: tower type 2, by-layer sequence, no ramming, nozzle volume 144 mm³, 424 mm³ flush per colour change. OrcaSlicer only |
 | `2` | Slicer-controlled purge at the chute, from ZMod's own Orca profiles | Refused: Print Handy has no profile for it |
 
-An unreadable or missing value is treated as `1`.
+An unreadable or missing value keeps the earlier behavior: a prime tower that only primes. The `purge.*` and `zmod.plugins` settings, plugin detection and the launch check are in [Purge and ZMod plugins](./settings.md#purge-and-zmod-plugins).
 
 Nopoop is core ZMod. No plugin is needed. Switch with:
 

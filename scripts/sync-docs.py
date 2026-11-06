@@ -143,13 +143,28 @@ def rewrite_links(text, upstream_to_site):
     return LINK_RE.sub(replace, text)
 
 
+def escape_vue_interpolation(segment):
+    """Neutralize "{{" / "}}" for the Vue template compiler.
+
+    Upstream guides quote Go template snippets (docker --format
+    '{{.Config.Image}}') in prose and inline code spans. Vue reads "{{"
+    as an interpolation start and the site build fails on the invalid
+    expression. The brace entities render as literal braces in the
+    browser but are invisible to the Vue tokenizer. Fenced code blocks
+    are exempt: VitePress renders them with v-pre, so their braces are
+    already safe and must stay literal.
+    """
+    return segment.replace("{{", "&#123;&#123;").replace("}}", "&#125;&#125;")
+
+
 def escape_placeholders(text):
     """Escape bare "<placeholder>" prose for the Vue template compiler.
 
-    Lines inside fenced code blocks and text inside `code spans` are copied
-    as is; so are real HTML tags (HTML_TAGS), comments and <https://...>
-    autolinks. Every other "<" that starts a tag-like name becomes "&lt;"
-    (and its ">" is left, which Vue renders literally).
+    Lines inside fenced code blocks are copied as is; so are real HTML
+    tags (HTML_TAGS), comments and <https://...> autolinks. Every other
+    "<" that starts a tag-like name becomes "&lt;" (and its ">" is left,
+    which Vue renders literally). "{{" / "}}" interpolations are escaped
+    in prose and inline code spans alike (see escape_vue_interpolation).
     """
     def prose(segment):
         def replace(match):
@@ -158,7 +173,7 @@ def escape_placeholders(text):
             if name in HTML_TAGS or (name in ("http", "https", "mailto") and rest.startswith((":", "s:"))):
                 return match.group(0)
             return "&lt;" + match.group(1) + match.group(2)
-        return TAG_START_RE.sub(replace, segment)
+        return escape_vue_interpolation(TAG_START_RE.sub(replace, segment))
 
     out, fenced = [], None
     for line in text.splitlines(keepends=True):
@@ -175,7 +190,7 @@ def escape_placeholders(text):
         parts, last = [], 0
         for span in CODE_SPAN_RE.finditer(line):
             parts.append(prose(line[last:span.start()]))
-            parts.append(span.group(0))
+            parts.append(escape_vue_interpolation(span.group(0)))
             last = span.end()
         parts.append(prose(line[last:]))
         out.append("".join(parts))
