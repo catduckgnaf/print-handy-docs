@@ -6,6 +6,8 @@ The documentation site for [Print Handy](https://github.com/catduckgnaf/print-ha
 
 This repository contains only the documentation site. It is not the Print Handy project itself.
 
+<!-- Local edits to README.md, BRANDING.md, docs/README.md, Docker and Web UI guides are editorial and intentionally not copied from an unreleased Print Handy ref. Pages navigation and homepage copy live only in this repository. -->
+
 ## Source of truth
 
 The content in `docs/` is copied from [`catduckgnaf/print-handy/docs`](https://github.com/catduckgnaf/print-handy/tree/main/docs), which remains the source of truth. Guides that are internal or research-only in that repo are not published here; where a published guide links to one, the link points back to the file on GitHub.

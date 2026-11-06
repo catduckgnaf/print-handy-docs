@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Print Handy',
-  description: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.',
+  description: 'Your slicer lives on a desk. You don’t. Share a model link or file, choose filament, review the estimate and approve the job. Runs locally; chat providers, model downloads and optional hosted AI use the network.',
   base: '/print-handy-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -21,13 +21,13 @@ export default defineConfig({
     ['meta', { property: 'og:url', content: 'https://catduckgnaf.github.io/print-handy-docs/' }],
   ],
   themeConfig: {
-    logo: '/logo.png',
+    logo: '/logo-dark.png',
     siteTitle: 'Print Handy',
     nav: [
-      { text: 'Guide', link: '/guide' },
+      { text: 'Start here', link: '/guide' },
       { text: 'Install', link: '/docker' },
       { text: 'Printers', link: '/printer-profiles' },
-      { text: 'Configuration', link: '/configuration-yaml' },
+      { text: 'Everyday use', link: '/project-reference' },
       { text: 'Troubleshooting', link: '/troubleshooting' },
       {
         text: 'External',
