@@ -3,11 +3,11 @@ layout: home
 
 hero:
   name: "Print Handy"
-  text: "Bambu Handy for every printer"
-  tagline: "Paste a MakerWorld or Printables link from your phone. Print Handy slices it, matches your spools, asks before it prints, watches the camera for spaghetti, and roasts your model on the way out. Works from the couch, the office, or the grocery store checkout line. We don't judge. The bot does."
+  text: "Your slicer lives on a desk. You don’t."
+  tagline: "Share a model link or file. Choose filament, review the estimate, and approve the exact job before it reaches your printer."
   image:
-    src: /logo.png
-    alt: Print Handy
+    src: /logo-dark.png
+    alt: Print Handy catduck mascot
   actions:
     - theme: brand
       text: Get Started
@@ -18,23 +18,23 @@ hero:
 
 features:
   - icon: 📱
-    title: Print from anywhere
-    details: Your slicer lives on a desk. You don't. Drop a link or upload an STL or 3MF in chat, pick colors with buttons, and the job is sliced and waiting for your OK before you're back from the fridge.
-  - icon: 🔥
-    title: Roasts included
-    details: Every print start comes with a one-line roast of your model. Another articulated dragon? Bold choice. Needs an AI endpoint, and you can turn it off if your ego is fragile.
-  - icon: 🍝
-    title: Spaghetti patrol
-    details: The camera watchdog checks frames for spaghetti, detached parts and stalls, then asks with Pause and It's fine buttons. Sometimes it really is fine. Sometimes it's modern art.
+    title: A shorter trip to print
+    details: Send a model link or file from Discord, Telegram or Matrix. Print Handy slices it and waits for your approval.
   - icon: ✅
-    title: Nothing prints behind your back
-    details: You check the bed and approve the exact sliced job before anything is sent. Lock approvals to one person if your friends have questionable taste.
+    title: You approve the job
+    details: Review the sliced job and estimate before a print is sent. Keep the human in the loop, where the hot equipment is.
   - icon: 🧵
-    title: Spoolman, minus the spreadsheet
-    details: Spools are matched to slots, runouts ask what you loaded, and filament is charged to the right spool. Bookkeeping you'll actually keep.
+    title: Filament in view
+    details: Track spools with the bundled Spoolman API and match them to printer slots.
   - icon: 🖨️
-    title: Every printer, every chat
-    details: Klipper, Bambu Lab, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint. Discord, Telegram or Matrix, plus a Web UI for status, settings and spools. One Docker container, no slicer babysitting.
+    title: Several connection paths
+    details: Works across supported Klipper, Bambu Lab, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint paths. See printer guides for limits and hardware verification status.
+  - icon: 🏠
+    title: Local-first
+    details: Runs on your hardware without a Print Handy cloud. Chat providers carry what you send; model downloads and optional hosted AI use the network.
+  - icon: 🍝
+    title: Optional camera checks
+    details: Configure a camera watchdog and a vision endpoint or local detector. Alerts are not a promise of safe unattended printing.
 ---
 
 [![CI](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml/badge.svg)](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml)

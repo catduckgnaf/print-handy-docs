@@ -1,0 +1,106 @@
+.hero {
+  padding: 48px 24px 32px;
+}
+
+.VPHero .container {
+  gap: 40px;
+}
+
+.VPHero .main {
+  max-width: 620px;
+}
+
+.VPHero .name,
+.VPHero .text {
+  max-width: 14ch;
+  text-wrap: balance;
+}
+
+.VPHero .tagline {
+  max-width: 42ch;
+  line-height: 1.55;
+}
+
+.VPHero .image-container {
+  max-width: min(360px, 38vw);
+}
+
+.VPHero .image-bg {
+  display: none;
+}
+
+.VPHero .image-src {
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 24px;
+}
+
+.VPHero .actions {
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 28px 20px 24px;
+  }
+
+  .VPHero .container {
+    gap: 16px;
+  }
+
+  .VPHero .main {
+    order: 1;
+    width: 100%;
+  }
+
+  .VPHero .image {
+    order: 0;
+  }
+
+  .VPHero .image-container {
+    max-width: 150px;
+    margin: 0 auto;
+  }
+
+  .VPHero .image-src {
+    max-height: 150px;
+    border-radius: 20px;
+  }
+
+  .VPHero .name {
+    font-size: 30px;
+  }
+
+  .VPHero .text {
+    font-size: clamp(28px, 8vw, 36px);
+    line-height: 1.12;
+    max-width: 15ch;
+    margin-inline: auto;
+  }
+
+  .VPHero .tagline {
+    font-size: 15px;
+    max-width: 34ch;
+    margin: 16px auto 0;
+  }
+
+  .VPHero .actions {
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .VPHero .action {
+    min-height: 48px;
+    padding: 0 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .VPHero .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
