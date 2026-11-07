@@ -58,6 +58,8 @@ export default defineConfig({
           { text: 'Introduction', link: '/guide' },
           { text: 'Project Reference', link: '/project-reference' },
           { text: 'Listener Domains', link: '/listeners' },
+          { text: 'Release checklist', link: '/release-checklist' },
+          { text: 'Print Handy X.Y.Z', link: '/release-notes-template' },
         ],
       },
       {

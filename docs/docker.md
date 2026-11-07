@@ -30,7 +30,7 @@ The `moonraker` and `bambulab_lan` domains have listener implementations today; 
 
 ## Included Spoolman
 
-Spoolman 0.27.0 is built from exact upstream revision `bed3f14ee77a3a571d31b14215d54b0b88a7519c` with its committed uv.lock, isolated from Print Handy dependencies. No third-party source is patched. No Node, npm or web UI assets are built or copied. A local static placeholder satisfies upstream's static-directory check. Print Handy spool commands and slicing lookups are the interface; `/api/v1` remains available.
+Spoolman 0.27.1 is built from exact upstream revision `ff8efd517b76a4b2783f29c89e9b9fbcd8cd167b` with its committed uv.lock, isolated from Print Handy dependencies. No third-party source is patched. No Node, npm or web UI assets are built or copied. A local static placeholder satisfies upstream's static-directory check. Print Handy spool commands and slicing lookups are the interface; `/api/v1` remains available.
 
 Default bind is `127.0.0.1:8000` inside the container. Print Handy defaults to `http://127.0.0.1:8000`. Compose publishes no port by default, and with no port mapped Spoolman stays loopback-only and unexposed.
 
@@ -292,7 +292,7 @@ As of 2.2.2 the shipped Docker default model is `klipper.generic` (it was `flash
 The current release is 2.2.5. Its index digest, read from GHCR on 2026-11-06, is the same digest `:latest` pointed at that day:
 
 ```text
-ghcr.io/catduckgnaf/print-handy@sha256:15daa36606fef923b773d1690d242584bd018df7746a545bc62ed78a825f8a56
+ghcr.io/catduckgnaf/print-handy@sha256:03d88ec367004143d1a087f92cdb46a9fbf7671d49b5f25d0aa3ee7209202375
 ```
 
 That digest is the amd64 and arm64 index, not one architecture's image. The in-repo Unraid template's `Repository` is this value. Compose has no default image: set `PRINT_HANDY_IMAGE` in `.env` to the same digest.
@@ -313,7 +313,7 @@ This is the edit. It is not applied by installing this repository.
 2. Change only the `Repository` element, from the moving tag to the digest:
 
 ```xml
-<Repository>ghcr.io/catduckgnaf/print-handy@sha256:15daa36606fef923b773d1690d242584bd018df7746a545bc62ed78a825f8a56</Repository>
+<Repository>ghcr.io/catduckgnaf/print-handy@sha256:03d88ec367004143d1a087f92cdb46a9fbf7671d49b5f25d0aa3ee7209202375</Repository>
 ```
 
 3. Leave every path, port, variable and `ExtraParams` value as it is. In particular do not drop a volume: the five appdata paths and any extra mounts (account tokens, timelapse archive) stay.
