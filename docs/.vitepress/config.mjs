@@ -62,6 +62,7 @@ export default defineConfig({
           { text: 'Release checklist', link: '/release-checklist' },
           { text: 'Print Handy X.Y.Z', link: '/release-notes-template' },
           { text: 'Multi-part print projects (#1008, incremental)', link: '/projects' },
+          { text: 'Live demo', link: '/live-demo' },
         ],
       },
       {
