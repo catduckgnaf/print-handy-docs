@@ -12,6 +12,9 @@ Print Handy ships third-party software in its container image and Compose file. 
 | BambuStudio | commit `56a57d00…` (`BAMBU_REF`) | `Dockerfile` | Build fails unless `git rev-parse HEAD` equals the ref |
 | Spoolman | commit `bed3f14e…` (`SPOOLMAN_REF`) | `Dockerfile` | Build fails unless the checked-out commit equals the ref; `uv sync --locked` |
 | uv (build only) | `0.9.5` | `Dockerfile` | Exact version |
+| OpenSCAD | Debian 13 package (distro version, unpinned) | `Dockerfile` runtime stage; `ci.yml` offline legs install the same package | Parity test in `tests/test_upstream_version_parity.py`: both surfaces install it from Debian 13, so the design/render tests prove the version the image ships |
+| Tesseract OCR | Debian 13 package (distro version, unpinned; `tesseract-ocr` carries the `tesseract-ocr-eng` language data as a dependency) | `Dockerfile` runtime stage; `ci.yml` offline legs install the same package | Same parity test as OpenSCAD |
+| Native bounds toolchain (build only) | Rust `1.99.1`, `maturin==1.16.0`, crate dependencies in `native/bounds/Cargo.lock` | `Dockerfile` bounds-build stage; `ci.yml` native-bounds job and offline legs | Parity test in `tests/test_upstream_version_parity.py` (all surfaces carry the same toolchain and maturin pins, and every wheel build uses `--locked`) |
 | Python packages | `pyproject.toml` | repository root | `pip-audit` in `ci.yml` |
 | cloudflared sidecar | `2026.10.7` plus manifest digest | `docker-compose.yml` (`CLOUDFLARED_IMAGE` overrides) | Digest is the multi-architecture index; never `latest` |
 
@@ -26,5 +29,6 @@ The scan covers operating system packages and the bundled binaries Syft can iden
 ## Review cadence and exceptions
 
 - Read the weekly report and update pins when a fixed upstream release exists. Bump the pin, its checksum or digest, and this table together.
+- The `Slicer test (bambu)` CI leg runs a Flathub Bambu Studio build pinned by ostree commit (2.8.2.61 today), which does not move with `BAMBU_REF`. When a bump changes the Bambu generation (the first two version components), either pin a Flathub build of the new generation in `ci.yml` and in `tests/test_ci_bambu_workflow.py` (`FLATPAK_BAMBU_VERSION`, `FLATPAK_BAMBU_COMMIT`), or record a dated verdict for the new pair in that test's `RECORDED_DIVERGENCES`. The test fails until one of them is done.
 - Re-check the cloudflared pin against the latest upstream release at least monthly, and after any cloudflared advisory. Look at the release notes for flag or behavior changes before moving the tag.
 - Accepted findings (no fix available, or not reachable in this image) are recorded in the PR or issue that accepts them, with the component, identifier, reason and a date to re-review. Do not suppress findings in the workflow.
