@@ -20,9 +20,6 @@ hero:
       link: https://discord.gg/mT2Ht3nqZu
 
 features:
-  - icon: 📱
-    title: A shorter trip to print
-    details: Send a model link or file from Discord, Telegram or Matrix. Print Handy slices it, shows you the estimate, and waits for your say-so.
   - icon: 🖨️
     title: Bambu Handy for everyone — even Bambu
     details: The find-it, tap-print, check-from-the-sofa phone experience Bambu owners love, brought to Klipper, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint printers — and yes, Bambu too.
@@ -37,87 +34,164 @@ features:
     details: Runs on your hardware, in your house, with no Print Handy cloud. AI and chat platforms are optional extras, never a requirement.
 ---
 
-[![CI](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml/badge.svg)](https://github.com/catduckgnaf/print-handy/actions/workflows/ci.yml)
-[![GitHub releases](https://img.shields.io/github/v/release/catduckgnaf/print-handy)](https://github.com/catduckgnaf/print-handy/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/catduckgnaf/print-handy/blob/main/LICENSE)
-
 ## See it in action
 
-This is the example from the GitHub README — the whole flow, as a scroll through one chat conversation. These are mockups built from the bot's real messages and buttons, with placeholder names.
+This is the example from the GitHub README — the whole flow, as a scroll through one chat conversation. These are mockups built from the bot's real messages and buttons, with placeholder names. Scroll on: the screenshots stay small, the story is on the right.
 
 <div class="story-step">
-
-**1. Drop a link, pick your colors.**
+<div class="story-media">
 
 ![Print Handy in Discord: paste a model link, the bot checks the model, then asks which color each part prints in](/screenshots/discord-01-link-and-colors.png)
 
 </div>
+<div class="story-text">
+
+**1. Drop a link, pick your colors.**
+
+Paste a MakerWorld, Printables or Thingiverse link — or just drop an STL or 3MF file into the chat. Print Handy fetches the model, measures it against your printer's bed, and reads the colors the designer used.
+
+Then it asks, part by part, which of *your* loaded filaments each color should print in. Buttons, not commands: if you can tap, you can print.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**2. Choose how many copies, then confirm — nothing prints until you do.**
+<div class="story-media">
 
 ![Print Handy in Discord: choose the number of copies, then confirm the estimate with Slice and print now, Slice only, Stop with colors saved or Cancel print request](/screenshots/discord-02-copies-and-confirm.png)
 
 </div>
+<div class="story-text">
+
+**2. Choose copies, see the estimate, then confirm.**
+
+How many copies? One tap. Print Handy slices the job and shows you the honest numbers first: print time, filament weight, and exactly what will be sent to the printer.
+
+Nothing prints until you approve that exact job — **Slice and print now**, **Slice only** if you are not ready, **Stop with colors saved** to keep your picks for later, or **Cancel**. Your printer never starts on a shrug.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**3. The print starts — and yes, it roasts you a little.**
+<div class="story-media">
 
 ![Print Handy in Discord: the print started post, ending with a one-line roast of the model](/screenshots/discord-03-print-start.png)
 
+</div>
+<div class="story-text">
+
+**3. The print starts — and yes, it roasts you a little.**
+
+The started post confirms the printer is running and names the spools doing the work, so anyone in the channel can see what is printing and in what.
+
+And because Print Handy has opinions, the post may end with a one-line roast of your model choice — drawn from its built-in corpus, no AI account required. Funny about the model, never about safety: warnings and refusals stay plain and exact.
+
+</div>
 </div>
 
 <details>
 <summary><b>More of the conversation: fit, spools, the watchdog and the finish</b></summary>
 
 <div class="story-step">
-
-**If it doesn't fit, choose how it fits.** The model is measured, never silently shrunk: split it across plates at full size, turn it, shrink it — or cancel.
+<div class="story-media">
 
 ![The fit question and the units question](/screenshots/discord-08-fit-and-geometry.png)
 
 </div>
+<div class="story-text">
+
+**If it doesn't fit, you choose how it fits.**
+
+Print Handy measures every model and never silently shrinks one. Too big for the bed? Split it across plates at full size, turn it, shrink it on purpose — or cancel, with the biggest size that *would* fit offered instead of a dead end.
+
+Tiny file with unclear units? You get the millimeters-or-inches question before anything is sliced at the wrong scale.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**It finishes, with a timelapse.**
+<div class="story-media">
 
 ![Print complete post with timelapse](/screenshots/discord-04-print-complete.png)
 
 </div>
+<div class="story-text">
+
+**It finishes, with a timelapse.**
+
+The completion post lands in the same chat with a timelapse of the whole print and a final photo of the result — proof, not just a green checkmark.
+
+It mentions the person who started the print, so the right human gets the ping and nobody else's phone buzzes at 2 a.m.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**The camera watchdog spots trouble.**
+<div class="story-media">
 
 ![Camera alert with Pause, It's fine and Stop asking for this print](/screenshots/discord-05-camera-watchdog.png)
 
 </div>
+<div class="story-text">
+
+**The camera watchdog spots trouble.**
+
+While a print runs, the watchdog keeps an eye on the camera feed for the spaghetti moment. When it sees one, you get the photo and three buttons: **Pause**, **It's fine**, or **Stop asking for this print**.
+
+It can run on a local detector right on your own hardware — no cloud, no AI endpoint, nothing leaving the house.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**Pause, runout and the spool question.**
+<div class="story-media">
 
 ![Paused post and runout spool question](/screenshots/discord-06-pause-and-runout.png)
 
 </div>
+<div class="story-text">
+
+**Pause or run out of filament? It asks, properly.**
+
+A paused print and a runout both post to the chat. If a spool ran dry, the spool question walks you through what is loaded now — and answering it settles the spool records honestly, without pretending the print magically resumed.
+
+No silent drops: a print that ends from a pause, by any route, gets named in the chat rather than vanishing.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**Change a spool, guided.** Pick the slot, pick the new spool, decide what happens to the old one, confirm.
+<div class="story-media">
 
 ![Changing a spool, guided](/screenshots/discord-09-spool-change.png)
 
 </div>
+<div class="story-text">
+
+**Change a spool, guided.**
+
+Swapping filament is a four-tap conversation: pick the slot, pick the new spool, decide what happens to the old one, confirm. Print Handy updates the built-in Spoolman records as part of the same flow.
+
+No spreadsheets, no "which slot was the red one in again" — Print Handy remembers what is loaded where.
+
+</div>
+</div>
 
 <div class="story-step">
-
-**A spool added in Spoolman gets offered for a slot.**
+<div class="story-media">
 
 ![New spool prompt and load flow](/screenshots/discord-07-new-spool.png)
 
+</div>
+<div class="story-text">
+
+**New spool? It offers it a home.**
+
+Add a spool in Spoolman and Print Handy notices — it offers the new spool for a slot in chat, so the record and the printer agree from the start.
+
+The same works in reverse: what you load through chat is what Spoolman shows. One set of books, kept for you.
+
+</div>
 </div>
 
 </details>

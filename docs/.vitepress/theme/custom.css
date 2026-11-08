@@ -122,13 +122,58 @@ html {
   transform: translateY(-4px);
 }
 
+/* Story steps: screenshot small on the left, the detailed commentary
+   on the right; one column on narrow screens. */
 .story-step {
-  margin: 28px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+  gap: 32px;
+  align-items: center;
+  margin: 44px 0;
 }
 
 .story-step img {
   border-radius: 16px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  width: 100%;
+}
+
+.story-text p {
+  margin: 0 0 12px;
+}
+
+@media (max-width: 768px) {
+  .story-step {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+}
+
+/* Status badges sit under the mascot, top right of the hero. */
+.hero-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.hero-badges img {
+  height: 20px;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .hero-badges {
+    margin-top: 10px;
+  }
 }
 
 @supports (animation-timeline: view()) {
