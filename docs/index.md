@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/catduckgnaf/print-handy
+    - theme: alt
+      text: Join the Discord
+      link: https://discord.gg/mT2Ht3nqZu
 
 features:
   - icon: 📱
@@ -57,3 +60,4 @@ Print Handy is that phone experience for everybody else, Bambu included. It live
 - [Discord bot setup](/discord-bot-setup) — create your Discord application and bot, and hand Print Handy the token and IDs safely.
 - [Printer profiles](/printer-profiles) — supported printers, delivery methods and verification limits.
 - [Troubleshooting](/troubleshooting) — troubleshoot by symptom.
+- [Print Handy Discord server](https://discord.gg/mT2Ht3nqZu) — support, chat and the live demo server; ask in #support when you are stuck.

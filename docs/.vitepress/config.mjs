@@ -33,6 +33,7 @@ export default defineConfig({
         text: 'External',
         items: [
           { text: 'GitHub repo', link: 'https://github.com/catduckgnaf/print-handy' },
+          { text: 'Discord server', link: 'https://discord.gg/mT2Ht3nqZu' },
           { text: 'Releases', link: 'https://github.com/catduckgnaf/print-handy/releases' },
           { text: 'Wiki', link: 'https://github.com/catduckgnaf/print-handy/wiki' },
           { text: 'Printer support', link: '/printer-support' },
@@ -128,6 +129,7 @@ export default defineConfig({
     ],
     socialLinks: [
       { icon: 'github', link: 'https://github.com/catduckgnaf/print-handy' },
+      { icon: 'discord', link: 'https://discord.gg/mT2Ht3nqZu' },
     ],
     search: {
       provider: 'local',
