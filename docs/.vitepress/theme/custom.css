@@ -104,3 +104,66 @@
     align-items: stretch;
   }
 }
+
+/* Fun, modern scrolling: smooth anchor scrolls, feature cards that lift
+   on hover, and homepage story steps that reveal as they scroll into
+   view. The reveal uses the CSS scroll-driven animations API where the
+   browser supports it; everywhere else the steps are simply visible.
+   Reduced-motion preferences turn all of it off. */
+html {
+  scroll-behavior: smooth;
+}
+
+.VPFeatures .item {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.VPFeatures .item:hover {
+  transform: translateY(-4px);
+}
+
+.story-step {
+  margin: 28px 0;
+}
+
+.story-step img {
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .story-step {
+      animation: story-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+
+    .VPFeatures .item {
+      animation: story-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
+
+@keyframes story-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .VPFeatures .item {
+    transition: none;
+  }
+}
