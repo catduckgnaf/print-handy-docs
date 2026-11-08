@@ -124,9 +124,9 @@ While a print runs, the listener checks the printer camera at layer 2, layer 5 a
 
 A completely dark frame is treated as a camera problem, not a print verdict: it is never sent to the vision model and never posts as a print alert. When the watchdog reads its stills from the go2rtc fan-out and the fan-out frame is completely dark, it falls back to the direct camera snapshot once. If the frame is still dark, the check is logged and, at most once per print, a plain camera notice (with only the **Stop asking for this print** button) says the camera image is completely dark and monitoring continues. Timelapse capture applies the same rule: dark frames are skipped and counted rather than recorded, and a print whose every captured frame was dark ends with no video and a completion post that names the dark camera as the reason.
 
-It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: a vision endpoint (`PRINT_HANDY__SERVICES__VISION_CHAT_URL` plus the `CLIPROXY_API_KEY` secret in `.env`; an empty vision URL disables roasts), a `PRINT_VISION_URL` custom endpoint, or the built-in local failure detector (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED=true`, #455 — an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
+It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: a vision endpoint (`PRINT_HANDY__SERVICES__VISION_CHAT_URL` plus the `CLIPROXY_API_KEY` secret in `.env`), a `PRINT_VISION_URL` custom endpoint, or the built-in local failure detector (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED=true`, #455 — an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
 
-The one-line roast may appear in the **print-started post only** (one per print), when an LLM or vision endpoint is available. Completion posts do not include roasts. It is enabled by default in that case; `vision.roast_enabled` / `PRINT_HANDY__VISION__ROAST_ENABLED` turns it off without affecting camera checks.
+The one-line roast rides the **completion post** (one per print), the failure and cancel posts, and a confirmed-spaghetti camera alert, and comes from the local roast corpus with no LLM or endpoint (#1002). It is enabled by default; `vision.roast_enabled` / `PRINT_HANDY__VISION__ROAST_ENABLED` turns it off without affecting camera checks.
 
 An optional **auto light-off** (#516) builds on the same verdicts: set `PRINT_HANDY__VISION__AUTO_LIGHT_OFF_MINUTES` above zero (30 is the suggested value; `0`, the default, is off) and the printer's light turns on when a print starts and off again after the camera has seen an empty plate for that many minutes after a print ends — any non-empty or uncertain check restarts the wait, so a part left on the plate keeps the light on. It covers Moonraker printers (the light object named with `PRINT_HANDY__VISION__LIGHT_OBJECT`, for example `led chamber_led`, or auto-discovered when the printer has exactly one `led` / `neopixel` / `output_pin` object), Bambu Lab chamber lights, and Elegoo SDCP chamber lights (turn-on only until an SDCP camera source is verified); other families have no light to switch and `bot check` says so. On Moonraker the switch is thrown in Moonraker, so Home Assistant's Moonraker integration sees the same light state with no extra wiring. This is the one opt-in exception to the watchdog's alert-only rule, and it covers the light only — never motion, heaters or print control. Full behaviour is in [SETTINGS.md](./settings.md#auto-light-off).
 
@@ -242,21 +242,55 @@ When a print finishes, the captured frames are assembled into the timelapse the 
 
 ### GPU passthrough and supported combinations
 
-Hardware encoding is opportunistic and never required; without a GPU everything falls back to CPU encoding, and the container starts and runs with no GPU present:
+Hardware encoding is opportunistic and never required. With no GPU the container starts, runs and encodes every timelapse on the CPU (`libx264`). A GPU that is missing, not accessible or failing never fails a timelapse: the encode moves to the next candidate and ends on the CPU, and the log names why (#455). Examples: `timelapse encode: no GPU encoder available (vaapi: no /dev/dri in the container …)`, `timelapse encode with h264_nvenc failed: ffmpeg exited 1: …` and `timelapse encode fell back to CPU (libx264) after GPU failure: …`.
 
-| Combination | What you grant | Notes |
-|---|---|---|
-| Intel iGPU / AMD GPU (VAAPI) | `/dev/dri` passthrough (below) | The baseline. The image carries the VAAPI drivers; `vainfo` in the image reports what the granted device supports. |
-| NVIDIA (NVENC) | The host NVIDIA driver plus the NVIDIA container toolkit passthrough | No CUDA toolkit or driver is baked into the image; Debian's ffmpeg already carries the `h264_nvenc` encoder, which activates only when the host runtime provides the device and driver. |
-| Intel Quick Sync (QSV) | `/dev/dri` passthrough | The `h264_qsv` encoder is in Debian's ffmpeg; it activates only when the host device/driver supports it. |
-| Anything else | Nothing | CPU (`libx264`) encoding, as today. |
+What the published image carries, per vendor (Debian trixie packages):
 
-**Not verified on real hardware:** no GPU path above has been run on physical hardware yet. The plumbing is covered by offline contract tests (pins, gates, loopback binds, image contents), and Stage 3's VAAPI/NVENC/QSV encoding is pinned by command-construction tests with the CPU fallback proven — but no hardware encode has been executed on a real GPU, and this section will say so until one has.
+| GPU | Encoder | In the image | What you grant |
+|---|---|---|---|
+| Intel iGPU / Arc | `h264_vaapi` (preferred), `h264_qsv` | VAAPI: `intel-media-va-driver` (amd64), `libva-drm2`, `vainfo`. QSV: Debian's ffmpeg links oneVPL on amd64 only; the oneVPL GPU runtime `libmfx-gen1.2` ships on amd64 | `/dev/dri` plus its group |
+| AMD Radeon / APU | `h264_vaapi` | `mesa-va-drivers` (radeonsi, built with every video codec, H.264 encode included) | `/dev/dri` plus its group |
+| NVIDIA | `h264_nvenc` | ffmpeg's NVENC encoder (amd64 and arm64). No CUDA toolkit or driver is baked in: the NVIDIA runtime mounts the host driver's libraries. The image sets `NVIDIA_DRIVER_CAPABILITIES=compute,video,utility`, because the runtime's default omits `video` and NVENC then cannot load `libnvidia-encode.so.1` | The NVIDIA runtime and one GPU |
+| Anything else | `libx264` | Always | Nothing |
 
-**Security note:** granting `/dev/dri` widens the container's access to the host — a device is not a network port, and a compromised container with GPU device access has more host surface than one without. That is why passthrough is opt-in and off by default in both deployment files, exactly like a host capability the operator chooses to grant.
+AMD's AMF encoders are not in Debian's ffmpeg build and need AMD's proprietary runtime, so AMD encodes through VAAPI. QSV is amd64-only. On an Intel generation where the free `intel-media-va-driver` has no H.264 encode entry point, `vainfo` shows no `VAEntrypointEncSlice`/`VAEntrypointEncSliceLP` line for H.264, and the encode falls back to CPU.
 
-- Compose: uncomment the `devices:` / `group_add:` block in `docker-compose.yml` and set `group_add` to the host's render group GID (`getent group render`).
-- Unraid: add `--device=/dev/dri` to the template's Extra Parameters and make sure the container user can use the host render group; the shipped template passes no device.
+`timelapse.capture_encoder` picks the preference: `auto` tries VAAPI, then NVENC, then QSV, then CPU. A GPU counts only when it is really usable: an Intel/AMD GPU needs a `/dev/dri/renderD*` node the container user (uid 1000) can read and write. A `/dev/dri` mapped without its group is reported as such instead of being tried. An NVIDIA GPU needs a `/dev/nvidia*` device from the NVIDIA runtime.
+
+**Security note:** granting `/dev/dri` or an NVIDIA GPU widens the container's access to the host. A device is not a network port, and a compromised container with GPU access has more host surface than one without. That is why passthrough is opt-in and off by default in both deployment files, exactly like a host capability the operator chooses to grant.
+
+#### Unraid
+
+Intel iGPU or AMD GPU:
+
+1. In the Unraid terminal, check the device exists and note its group: `ls -l /dev/dri` and `stat -c %g /dev/dri/renderD128`. On an Intel iGPU with no `/dev/dri`, install the **Intel GPU TOP** plugin (it loads the `i915` driver). AMD GPUs normally load `amdgpu` by themselves, or use the **Radeon TOP** plugin.
+2. Edit the container, switch to **Advanced View**, and add to **Extra Parameters**: `--device=/dev/dri --group-add=GID`, with the GID from step 1. The container runs as uid 1000, not root, so without `--group-add` the device is visible but unusable.
+3. Apply, then check from the Unraid terminal: `docker exec print-handy vainfo --display drm --device /dev/dri/renderD128`. It should list an H.264 `VAEntrypointEncSlice` (or `…EncSliceLP`) line.
+4. Leave **Timelapse capture encoder** on `auto`, or set `vaapi` (Intel or AMD) or `qsv` (Intel, amd64).
+
+NVIDIA:
+
+1. Install the **Nvidia-Driver** plugin from Community Applications and reboot when it asks. Its page shows your GPU's UUID (`GPU-…`).
+2. Edit the container, switch to **Advanced View**, and add `--runtime=nvidia` to **Extra Parameters**.
+3. Click **Show more settings** and set **NVIDIA visible devices** (`NVIDIA_VISIBLE_DEVICES`) to your GPU UUID, or `all`. The template ships it empty, which grants no GPU. **NVIDIA driver capabilities** (`NVIDIA_DRIVER_CAPABILITIES`) ships as `compute,video,utility`, the same as the image default. If you change it, keep `video` in it (or use `all`), or NVENC cannot load. Both variables are optional and hidden, and do nothing without `--runtime=nvidia`.
+4. Apply, then check: `docker exec print-handy ls /dev/nvidia0` and `docker exec print-handy sh -c 'ldconfig -p | grep libnvidia-encode'`.
+5. Leave **Timelapse capture encoder** on `auto`, or set `nvenc`.
+
+A host with both an iGPU and an NVIDIA card can grant either one or both. `auto` tries VAAPI (the iGPU) first, and `nvenc` moves NVIDIA first.
+
+#### Docker Compose
+
+- Intel or AMD: uncomment the `devices:` / `group_add:` block in `docker-compose.yml` and set `group_add` to the GID that owns `/dev/dri/renderD128` on the host (`stat -c %g /dev/dri/renderD128`; `getent group render` names the same group on most distributions).
+- NVIDIA: install the NVIDIA driver and the NVIDIA Container Toolkit on the host (`nvidia-ctk runtime configure --runtime=docker`, then restart Docker), and uncomment the `deploy:` block, which reserves one GPU. Plain `docker run` does the same with `--gpus 1`.
+- Check from the host the same way as on Unraid: `docker compose exec combined vainfo --display drm --device /dev/dri/renderD128`, or `docker compose exec combined ls /dev/nvidia0`.
+
+#### What is verified
+
+The selection, the device checks, the named fallback notes and the CPU fallback are covered by offline tests with simulated devices and a faked ffmpeg. The CPU path is also exercised end to end with the real ffmpeg. **No GPU encode has been run on real hardware**: VAAPI, QSV and NVENC are pinned by command-construction and image-contents tests only, and this section will say so until an operator run on a real GPU proves each one.
+
+#### GPU and the local failure detector
+
+Passing a GPU through accelerates **encoding only** today. The local failure detector (`vision.local_detector_enabled`, #455) runs on ONNX Runtime, and the image installs the PyPI `onnxruntime` wheel, which is the CPU build. The detector's provider selection would use CUDA, OpenVINO or ROCm if the installed build offered them, but this image's build never does. When a GPU device is visible and the build is CPU-only, `bot check`'s **local detector** row says so. On CPU, one check of the pinned model takes roughly 0.2–0.3 s, and the watchdog checks only every few minutes, so CPU detection works without a GPU. GPU inference builds are a later #455 stage.
 
 ## First-run configuration
 
@@ -287,12 +321,12 @@ As of 2.2.2 the shipped Docker default model is `klipper.generic` (it was `flash
 
 ## Pinning the image
 
-`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.2.5` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
+`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.2.6` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
 
-The current release is 2.2.5. Its index digest, read from GHCR on 2026-11-06, is the same digest `:latest` pointed at that day:
+The current release is 2.2.6. Its index digest, read from GHCR on 2026-11-07, is the same digest `:latest` pointed at that day:
 
 ```text
-ghcr.io/catduckgnaf/print-handy@sha256:03d88ec367004143d1a087f92cdb46a9fbf7671d49b5f25d0aa3ee7209202375
+ghcr.io/catduckgnaf/print-handy@sha256:4b7889bea042c15ab90477dc7528a2cf135b022c2bce5ca8e0d40685adad47ac
 ```
 
 That digest is the amd64 and arm64 index, not one architecture's image. The in-repo Unraid template's `Repository` is this value. Compose has no default image: set `PRINT_HANDY_IMAGE` in `.env` to the same digest.
@@ -300,7 +334,7 @@ That digest is the amd64 and arm64 index, not one architecture's image. The in-r
 Confirm a tag still points where you think before you pin it:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.2.5
+docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.2.6
 ```
 
 The `Digest:` line of the index is the value to pin. The per-architecture lines under `Manifests:` are not.
@@ -313,7 +347,7 @@ This is the edit. It is not applied by installing this repository.
 2. Change only the `Repository` element, from the moving tag to the digest:
 
 ```xml
-<Repository>ghcr.io/catduckgnaf/print-handy@sha256:03d88ec367004143d1a087f92cdb46a9fbf7671d49b5f25d0aa3ee7209202375</Repository>
+<Repository>ghcr.io/catduckgnaf/print-handy@sha256:4b7889bea042c15ab90477dc7528a2cf135b022c2bce5ca8e0d40685adad47ac</Repository>
 ```
 
 3. Leave every path, port, variable and `ExtraParams` value as it is. In particular do not drop a volume: the five appdata paths and any extra mounts (account tokens, timelapse archive) stay.
@@ -368,10 +402,10 @@ To adopt the new name (optional, any time before that removal):
 
 ### Rollback
 
-Rollback is the previous digest with the same data paths. Nothing in Print Handy downgrades the Spoolman database, so roll back only to an image that can read the data the current one wrote. The 2.2.4 index, which 2.2.5's release notes leave untouched, is:
+Rollback is the previous digest with the same data paths. Nothing in Print Handy downgrades the Spoolman database, so roll back only to an image that can read the data the current one wrote. The 2.2.5 index, which 2.2.6's release notes leave untouched, is:
 
 ```text
-ghcr.io/catduckgnaf/print-handy@sha256:a43e48f1eea57c9d053ff9cf8bc535e22acf010cf987a699efc44a87472c33ec
+ghcr.io/catduckgnaf/print-handy@sha256:03d88ec367004143d1a087f92cdb46a9fbf7671d49b5f25d0aa3ee7209202375
 ```
 
 Put that value back in `Repository` (or in `PRINT_HANDY_IMAGE`) and recreate. If the container will not start on the new digest, put the digest you copied out of the template backup back instead of guessing a tag.
@@ -509,6 +543,8 @@ All OS stages use Debian 13 slim. `APP_CHANNEL=stable|development` labels proven
 The official prebuilt archives are downloaded and extracted only inside approved hosted image builds, never installed on a Hermes host. The bundled build's version and source revision (shared by both architectures) and each architecture's asset name and SHA256 are pinned by `docker/orca-prebuilt.sh`, and the SHA256 is verified before extraction; any architecture other than amd64 or arm64 fails closed in that script. `ORCA_BUILD_JOBS=auto` bounds CPU/memory usage for the optional Bambu Studio source build only; explicit values accept 1 through 64. See [SETTINGS.md](./settings.md#build-arguments).
 
 `WITH_BAMBU=false` is the publication default; enabling pinned source-built Bambu Studio needs its own runtime acceptance. OpenSCAD (`openscad`) is included for CAD splitting and AI design (`/print-design`, #388).
+
+The `bounds-build` stage compiles the optional Rust/PyO3 native bounds parser (#952, `native/bounds/`) into an abi3 wheel (the Rust installer is a checksum-pinned rustup-init per architecture), and the runtime stage extracts only the compiled extension from it into site-packages and `/app`: no Rust toolchain and none of the wheel's staged package files reach the runtime image. The `bounds-image-stage` CI job builds this stage on native amd64 and arm64 runners on every PR. G-code in inch units (`G20`) is refused by both parsers. The parser is an accelerator only: the Python implementation remains the permanent fallback wherever the extension is absent or fails its startup self-check, so an image built without this stage behaves identically, just slower on plate-scale G-code. See `native/bounds/README.md`.
 
 ## Validation and publication
 
