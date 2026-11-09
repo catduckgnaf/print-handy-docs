@@ -127,4 +127,4 @@ The site is built with [VitePress](https://vitepress.dev/), modelled on the [ope
 
 ## License
 
-MIT — see [LICENSE](LICENSE). This matches the Print Handy project.
+GNU Affero General Public License v3.0 only (AGPL-3.0-only) — see [LICENSE](LICENSE) and [NOTICE](NOTICE). This matches the Print Handy project.
