@@ -22,7 +22,7 @@ const { Layout } = DefaultTheme
             <img src="https://img.shields.io/github/v/release/catduckgnaf/print-handy" alt="GitHub releases" />
           </a>
           <a href="https://github.com/catduckgnaf/print-handy/blob/main/LICENSE" target="_blank" rel="noreferrer">
-            <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" />
+            <img src="https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg" alt="License: AGPL-3.0-only" />
           </a>
         </div>
       </div>

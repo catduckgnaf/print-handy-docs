@@ -126,7 +126,7 @@ export default defineConfig({
     },
     footer: {
       message: 'Documentation content is copied from <a href="https://github.com/catduckgnaf/print-handy">catduckgnaf/print-handy</a> — that repo\'s <code>docs/</code> directory is the source of truth.',
-      copyright: 'Copyright © 2026 catduck. Released under the MIT License.',
+      copyright: 'Copyright © 2026 catduck. Released under the GNU AGPL-3.0-only.',
     },
   },
 })
