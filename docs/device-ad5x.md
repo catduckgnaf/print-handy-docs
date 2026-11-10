@@ -59,7 +59,7 @@ reads the version from Moonraker's `/machine/system_info` distribution entry
 instead (for example `zmod 1.7.5 -> 1.7.5-2`). How the version is read and
 reported is in [ZMod printers](./zmod.md#audited-zmod-version). If the doctor
 row still says `unknown`, everything version-gated takes the conservative
-path (see [3MF delivery](#3mf-delivery)).
+path (see [3MF delivery]).
 
 ZMod's saved variable `klipper13` can read `0` while the host runs Klipper
 13. In that state ZMod's MCU/host mismatch warning is off. Confirm with ZMod
@@ -86,8 +86,7 @@ Details: [Z offset](./calibration.md#z-offset--report--guide-in-every-mode).
 ## Bed mesh
 
 Build the full mesh with `/print-calibration` (or the supervised
-`moonrakerctl mesh-run` routine,
-[bed mesh routine](https://github.com/catduckgnaf/print-handy/blob/main/hermes/skills/klipper-3d-printing/references/bed-mesh-routine.md)).
+`moonrakerctl mesh-run` routine).
 Screenless, both run ZMod's load-cell-aware leveling:
 
 ```
@@ -179,7 +178,7 @@ Known risks:
 ## 3MF delivery
 
 `[printer] zmod_delivery_format` chooses how sliced jobs travel to the
-printer. See [Print file format](./zmod.md#print-file-format-gcode-or-gcode3mf-564)
+printer. See [Print file format](./zmod.md#print-file-format-gcode-or-gcode3mf)
 and the [Settings reference](./settings.md).
 
 | Value | Sends |
@@ -192,10 +191,10 @@ and the [Settings reference](./settings.md).
 [ZMod version](#zmod-version)), `auto` sends plain `.gcode`, the
 long-standing path. With the version readable as 1.7.5 or newer, `auto`
 already sends `.gcode.3mf`, and that path has not yet passed the live
-checks on issue #564 (starting a packaged print, color mapping on the
+checks on (starting a packaged print, color mapping on the
 printer, web UI metadata, timelapse markers). If a packaged print
 misbehaves on your printer, set `gcode` to go back to the long-standing
-path, and report what you saw on #564.
+path, and report what you saw in the support Discord or as a GitHub issue.
 
 ## Spools, IFS slots and Spoolman
 
