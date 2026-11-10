@@ -77,7 +77,9 @@ the *upstream* files rather than diffing the copies.
   the summary/artifact — the check never reports a silent success.
 
 Excluded upstream files (internal/research-only, not published here) are
-listed in `scripts/check-sync.sh`: `3MF-REMAP-INVENTORY.md` (an
+listed in `scripts/check-sync.sh`: `3MF-CONVERSION-EVIDENCE.md`,
+`GEOMETRY_AUDIT.md` and `RELEASE-NOTES-GUIDE.md` (engineering and
+contributor pages), `3MF-REMAP-INVENTORY.md` (an
 implementation inventory, not a user guide), `BAMBU-CONNECTIVITY.md`,
 `DOCKER-117-*.md`, `INTERNAL_RELEASE_NOTES.md`, `ISSUE-126-TIMELAPSE.md`,
 `KICAD-EVALUATION.md`, `MULTI-PRINTER-DESIGN.md` (a design proposal for

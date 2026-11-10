@@ -81,7 +81,7 @@ at 1.
   when the saved offset or `load_zoffset` does not match its reviewed
   interface packet.
 
-Details: [Z offset](./calibration.md#z-offset--report--guide-in-every-mode).
+Details: [Z offset](./calibration.md#z-offset-report--guide-in-every-mode).
 
 ## Bed mesh
 
