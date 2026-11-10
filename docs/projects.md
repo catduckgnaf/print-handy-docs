@@ -1,4 +1,4 @@
-# Multi-part print projects (#1008, incremental)
+# Multi-part print projects
 
 A model can be made of several printable components. Print Handy already
 supports selecting parts/versions from a model-site link, combining them into
@@ -70,9 +70,9 @@ offer requires an actual empty-bed observation.
 
 `/print-again` understands the plate labels. `/print-again 82B` reprints
 exactly that plate. Picking a project plate by its print number or its
-title first asks its scope — **This plate only**, **Entire project**,
+title first asks its scope, **This plate only**, **Entire project**,
 **Choose a plate**, or **Remaining unprinted plates** when some plates are
-not finished yet — because one plate of a project is not the project.
+not finished yet, because one plate of a project is not the project.
 An exact label already names its scope, so it skips the question.
 
 The entire-project and remaining-plates scopes queue the other plates as
@@ -90,7 +90,7 @@ into a project reprint.
 **Not implemented yet:** a dedicated project run id recorded on reprint
 records, collecting across multiple chat messages, ZIP importing, project
 management in Web UI, and full AI-produced multi-part assemblies. Those
-remain acceptance criteria of [issue #1008](https://github.com/catduckgnaf/print-handy/issues/1008);
+remain acceptance criteria of [](https://github.com/catduckgnaf/print-handy/issues/1008);
 the CAD generator itself is [#998](https://github.com/catduckgnaf/print-handy/issues/998).
 
 ## Safety and verification

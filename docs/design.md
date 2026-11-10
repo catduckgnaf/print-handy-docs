@@ -1,4 +1,4 @@
-# AI design with OpenSCAD (`/print-design`, alias `/design`, #388)
+# AI design with OpenSCAD (`/print-design`, alias `/design`)
 
 Describe a part in chat — Discord, Telegram or Matrix — or start from a model you already have — and Print Handy
 designs it for you: a model writes
@@ -17,7 +17,17 @@ dimensions. You then choose:
   named variable directly, with no model call, and the reply names the
   change ("plate_z: 3 → 5"); after a model-written turn the reply lists
   any parameters the rewrite changed, so silent drift is visible.
+  "Undo" (or "go back", "go back to the first one", "go back to version
+  2") returns to an earlier version of the same design without a model
+  call, reusing that version's render. A model-written change is shown the
+  last few change requests, so "the other side" or "like before" resolve
+  against the same conversation.
 - **Cancel** — the design session ends.
+
+You do not have to press **Change it** first: while the question is open,
+just type the change ("make the holes 5 mm") and it runs as the next turn
+of the same design. Typing a choice (or its number on Matrix) answers the
+question the same as the button.
 
 ## Turning it on
 
@@ -33,7 +43,7 @@ the same posture as roasts. The `[design] enabled` switch is tri-state:
 
 Where the model comes from:
 
-- **Every mode, Hermes included:** the `[design]` settings pick the model.
+- **The `[design]` settings pick the model.**
   Leave `chat_url` / `model` / `api_key_env` empty to reuse the `[llm]`
   endpoint, or point them at a stronger model — design turns are the ones
   worth spending a bigger model on, while everyday chat stays on the small
@@ -42,14 +52,6 @@ Where the model comes from:
   serves design there, and nothing else changes — ordinary chat on those
   platforms still has no LLM fallback and unmatched text still gets the
   short “didn't understand” reply.
-- **Hermes with no endpoint configured:** the design model is the
-  profile's auxiliary task instead. Uncomment the
-  `auxiliary.print_design` block in the profile config (the shipped
-  template carries a commented example) to pin a provider/model for
-  design; chat stays on the profile model. As soon as a `[design]` (or
-  `[llm]`) endpoint is configured it takes over, and the profile pin
-  becomes the fallback.
-
 `bot check` prints a `design` row naming the mode (`off`, `auto-off`,
 `auto-on` or `on`), the model in effect, and whether OpenSCAD is present.
 
@@ -75,6 +77,40 @@ The model writes the part, but it never gets to run anything general:
   a repair, up to `[design] repair_attempts` times (3 by default). If it
   still fails, the turn says so and shows the last error — nothing is
   handed to intake.
+
+## How a design is made and checked
+
+The model is asked for a parametric, print-aware file: every dimension a
+named variable with a comment, millimeters, one solid lying flat on the
+bed, chamfers instead of overhangs past 45 degrees, walls of at least
+1.2 mm, 0.2-0.3 mm clearance on holes and mating parts, and a size that
+fits the configured printer. The file starts with three comment lines the
+engine reads back: `// Part:` (what it is), `// Size:` (the intended
+bounding box) and `// Assumes:` (each assumption worth knowing).
+
+Before you see anything, the rendered part is measured and checked: it
+must be a watertight, manifold solid with volume; it should be one piece,
+rest on the bed at Z=0, fit the printer's bed and build height
+(`[printer] bed_mm` and `max_print_height_mm`), and measure what its
+`Size` line says (within 0.5 mm or 3 %, in any axis order). A failed check
+goes back to the model with the measured numbers ("it measures 30 x 28 x
+45 mm, not the 30 x 31 x 45 mm on the Size line") and the model fixes it.
+Render errors and failed checks share the same `repair_attempts` budget,
+so a turn never makes more than `1 + repair_attempts` model calls; every
+attempt is logged. When the budget runs out, the attempt with the fewest
+problems is shown and the reply lists what is still off under
+"Heads-up"; a mesh that is not a printable solid is never shown or handed
+to intake.
+
+The reply says what was made, its measured size, what was assumed, the key
+named parameters and how to change it. The numbers are always measured;
+only the description and the assumptions are the model's words.
+
+Design proceeds on sensible assumptions instead of asking. It asks at most
+one question per design, and only on the first turn of a new part, when a
+missing fact would change the part and cannot be assumed (the size of the
+thing it must fit, with no standard size). Your next message is the
+answer; "you pick" lets it choose and say what it assumed. Edits never ask.
 
 ## Honest limits
 
@@ -165,7 +201,7 @@ with, kept for the same 14 days — so it lists sessions even while
 slices or prints. Slicing a design still happens from chat, through the
 normal confirmation flow.
 
-## Multi-part engineering checks (#998, groundwork)
+## Multi-part engineering checks
 
 `print_handy/core/assembly_check.py` measures a multi-part project's exported STLs and judges them against stated rules, never against a model's own claims. Every finding carries its measured evidence:
 
@@ -174,9 +210,9 @@ normal confirmation flow.
 - **Rack ears:** checked against the EIA-310 panel clearance, not just the unit pitch. A 2U ear may be 88.106 mm, not 88.9 mm.
 - **Mirrored left/right pairs** must match.
 - **Project shape:** at least two structural printable parts. Test coupons and geometry marked not-for-printing never count.
-- **Declared roles (#1017):** a part's role no longer has to be guessed from its file name. A `project_v1` component may declare `role` — `structural`, `coupon`, `reference`, or `rack_ear` — and `assembly_check.review` takes the manifest (or the same declarations directly) and lets the declaration win, labeled `declared` in the project-shape evidence; undeclared parts keep the file-name inference, labeled `inferred`. A part declared `rack_ear` gets the panel-clearance check because it was declared, at any height, and a declared non-ear is no longer ear-checked by the height heuristic. A declared ear reviewed without a rack size is a warning, not a pass.
-- **Assembly transforms and collisions (#1017):** a component may also declare its placement as `assembly_transform` (`translate_mm` and `rotate_deg`, degrees about X, then Y, then Z — for example the reference tray's +10 mm Z offset, which loose STLs cannot carry). Placed parts are reported with their placed bounds and checked pairwise: disjoint placed bounds prove no collision; overlapping bounds get an exact interpenetration test, where flush contact is not a collision. Parts without a declared placement are named as unchecked — a review where only some parts are placed says so, and a review where none are placed still states transforms and collisions as not checked.
+- **Declared roles:** a part's role no longer has to be guessed from its file name. A `project_v1` component may declare `role` — `structural`, `coupon`, `reference`, or `rack_ear` — and `assembly_check.review` takes the manifest (or the same declarations directly) and lets the declaration win, labeled `declared` in the project-shape evidence; undeclared parts keep the file-name inference, labeled `inferred`. A part declared `rack_ear` gets the panel-clearance check because it was declared, at any height, and a declared non-ear is no longer ear-checked by the height heuristic. A declared ear reviewed without a rack size is a warning, not a pass.
+- **Assembly transforms and collisions:** a component may also declare its placement as `assembly_transform` (`translate_mm` and `rotate_deg`, degrees about X, then Y, then Z — for example the reference tray's +10 mm Z offset, which loose STLs cannot carry). Placed parts are reported with their placed bounds and checked pairwise: disjoint placed bounds prove no collision; overlapping bounds get an exact interpenetration test, where flush contact is not a collision. Parts without a declared placement are named as unchecked — a review where only some parts are placed says so, and a review where none are placed still states transforms and collisions as not checked.
 
-Against the issue #998 reference design (the fixture in `tests/corpus/design/mac_mini_rack_issue_998/`), it fails both 88.5 mm ears on panel clearance and warns on the 214 mm tray's 3 mm bed margin.
+Against the reference design (the fixture in `tests/corpus/design/mac_mini_rack_issue_998/`), it fails both 88.5 mm ears on panel clearance and warns on the 214 mm tray's 3 mm bed margin.
 
 Not checked (and said so in every summary): fastener fit, load and heat, and slicer toolpaths. The design engine does not call these checks yet; the manifest declarations above are the surface a multi-part design session or the AI design handoff declares on, and `review(..., project=manifest)` is the call it makes.
