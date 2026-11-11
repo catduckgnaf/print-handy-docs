@@ -2,7 +2,7 @@
 
 [Documentation home](./guide.md) · [Printer profiles](./printer-profiles.md)
 
-Running the Docker image on an A1? Follow [From the image to a first A1 print](./bambu-a1-docker.md), the step-by-step walkthrough run on an A1 on 26 Oct 2026, including the workarounds that were needed then.
+For a Bambu Lab A1, start with the [Docker install](./docker.md) and the LAN configuration below. The old model-specific walkthrough is no longer part of this site.
 
 Select the A1 with `printer.model: bambulab.a1`. Print Handy slices for the A1, checks fit and G-code, and can package the result. It connects to the printer only when you configure LAN status (see [LAN status](#lan-status-read-only-opt-in)), and it uploads or starts a print only under the further opt-in described in [Printing over LAN](#printing-over-lan-opt-in). One full A1 print over the LAN has been recorded (see the walkthrough above); other A1 setups and the LAN path in general are covered by offline tests only.
 

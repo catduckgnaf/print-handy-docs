@@ -534,7 +534,7 @@ printer warnings recorded before the stop".
 
 ## Unraid DockerMan
 
-Use `docker/unraid/print-handy.xml` (the Community Applications listing is the same install surface). One entry runs all required processes; leave PostArgs empty. Its only Extra Parameters value is `--shm-size=256m`, the same shared-memory size Compose sets: Docker's 64 MB default is too small for OrcaSlicer's slicing. The template carries only the install-time surface: the Web UI port (8088), a single **Appdata** path mounting all of `/data`, a **Timelapse Archive** path whose default folder sits inside Appdata, the bundled/external Spoolman choice, the container timezone and the GPU passthrough entries: both paths under `/mnt/user/appdata/print-handy` by default, the Appdata path owned by UID/GID 1000:1000.
+Print Handy is available in **Unraid Community Apps**. The installation uses the project's Unraid template (`docker/unraid/print-handy.xml`). One entry runs all required processes; leave PostArgs empty. Its only Extra Parameters value is `--shm-size=256m`, the same shared-memory size Compose sets: Docker's 64 MB default is too small for OrcaSlicer's slicing. The template carries only the install-time surface: the Web UI port (8088), a single **Appdata** path mounting all of `/data`, a **Timelapse Archive** path whose default folder sits inside Appdata, the bundled/external Spoolman choice, the container timezone and the GPU passthrough entries: both paths under `/mnt/user/appdata/print-handy` by default, the Appdata path owned by UID/GID 1000:1000.
 
 Before the first start, make the Appdata folder writable by the container user (UID 1000; Unraid creates folders as 99:100). In the Unraid terminal:
 

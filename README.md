@@ -1,10 +1,12 @@
 # Print Handy Documentation
 
-The documentation site for [Print Handy](https://github.com/catduckgnaf/print-handy) — prepare and manage 3D prints from Discord, with an explicit confirmation before printing.
+The documentation site for [Print Handy](https://github.com/catduckgnaf/print-handy) — design parts with optional AI, prepare and manage 3D prints in the Web UI or chat, and approve each print before it starts. Local first, with no LLM needed for ordinary printing.
 
 **Live site:** https://catduckgnaf.github.io/print-handy-docs/
 
 This repository contains only the documentation site. It is not the Print Handy project itself.
+
+Install via Docker, **Unraid Community Apps**, or the native standalone bot. Native installation and the standalone bot are one path, not two products. The site highlights [model design](https://catduckgnaf.github.io/print-handy-docs/design), Wrapped, Pasta Cam, Spoolman-backed printer management and guarded beta firmware/component updates.
 
 <!-- Local edits to README.md, BRANDING.md, docs/README.md, Docker and Web UI guides are editorial and intentionally not copied from an unreleased Print Handy ref. Pages navigation and homepage copy live only in this repository. -->
 
@@ -76,11 +78,11 @@ the *upstream* files rather than diffing the copies.
   the run would fail at that step and the drift report would still be in
   the summary/artifact — the check never reports a silent success.
 
-Excluded upstream files (internal/research-only, not published here) are
+Excluded upstream files (internal/research-only or retired walkthroughs, not published here) are
 listed in `scripts/check-sync.sh`: `3MF-REMAP-INVENTORY.md` (an
 implementation inventory, not a user guide), `BAMBU-CONNECTIVITY.md`,
 `DOCKER-117-*.md`, `INTERNAL_RELEASE_NOTES.md`, `ISSUE-126-TIMELAPSE.md`,
-`KICAD-EVALUATION.md`, `MULTI-PRINTER-DESIGN.md` (a design proposal for
+`AD5X-WALKTHROUGH.md`, `BAMBU-A1-DOCKER.md`, `LIVE-DEMO.md`, `KICAD-EVALUATION.md`, `MULTI-PRINTER-DESIGN.md` (a design proposal for
 unimplemented work; the site publishes shipped guides), `RELEASE-NOTES.md`,
 `RENAME-MIGRATION.md`,
 `REUSE-MAP.md`, `hardcoded-inventory.md`, `home-assistant-panic.md`
