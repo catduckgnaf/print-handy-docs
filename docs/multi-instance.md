@@ -1,9 +1,8 @@
 # More than one printer: one instance per printer (the isolation alternative)
 
-[Documentation home](./guide.md) · [Docker](./docker.md) · Issue [#257](https://github.com/catduckgnaf/print-handy/issues/257)
+[Documentation home](./guide.md) · [Docker](./docker.md)
 
-Since Stage 2 of [#257](https://github.com/catduckgnaf/print-handy/issues/257) shipped, **one
-Print Handy instance serves a whole roster of printers**: a `[[printers]]` list in the config
+**One Print Handy instance serves a whole roster of printers**: a `[[printers]]` list in the config
 file, channel-per-printer routing, per-printer state and leases, and one listener per
 Moonraker printer, see [SETTINGS.md, Printers list](./settings.md#printers-list) and the
 [Multi-printer design](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/MULTI-PRINTER-DESIGN.md). For most households that is the answer, and
