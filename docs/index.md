@@ -24,8 +24,8 @@ features:
     title: Design a model. No slicer app required.
     details: Describe a part, preview it and request changes with optional AI and OpenSCAD. Or bring your own STL, 3MF or model link. Print Handy slices in the background and asks you to approve the actual job.
   - icon: 🎉
-    title: Wrapped, Pasta Cam and a little attitude
-    details: Print Handy Wrapped recaps your printing year, with optional local video and sharing. Pasta Cam watches for print failures where supported; timelapses and a built-in, no-LLM roast engine make the rest more fun.
+    title: Pasta Wrapped, Pasta Cam and a little attitude
+    details: Pasta Wrapped recaps your printing year, with optional local video and sharing. Pasta Cam watches for print failures where supported; timelapses and a built-in, no-LLM roast engine make the rest more fun.
   - icon: 🛠️
     title: Complete printer management
     details: Manage prints, printers, calibration and filament with bundled Spoolman. Check firmware and supported plugin updates where available. In beta, updates are limited by printer family and require confirmation.
@@ -206,7 +206,7 @@ The same works in reverse: what you load through chat is what Spoolman shows. On
 
 A printer shouldn't require an appointment with a desktop slicer for every job. Describe what you need with optional AI, drop in a model link or upload a file, then let Print Handy prepare the job and ask for approval before it prints.
 
-Get status and printer management in the local Web UI, or use the chat you already have open. Wrapped remembers the year. Pasta Cam watches for trouble on supported setups. The roasts don't even need an LLM.
+Get status and printer management in the local Web UI, or use the chat you already have open. Pasta Wrapped remembers the year. Pasta Cam watches for trouble on supported setups. The roasts don't even need an LLM.
 
 *Not affiliated with Bambu Lab. We just liked their app enough to want that convenience on more printers.*
 
@@ -216,7 +216,7 @@ Get status and printer management in the local Web UI, or use the chat you alrea
 - [Docker](/docker): one container with the bot, printer listeners, slicer and bundled Spoolman.
 - [Native installation](/install): the same standalone bot installed with Python and systemd, without Docker.
 - [Design a model](/design): optional AI design in chat, preview and revise before guided slicing.
-- [Web UI](/webui): local chat, status, settings, spool management, print records and Wrapped.
+- [Web UI](/webui): local chat, status, settings, spool management, print records and Pasta Wrapped.
 - [Discord](/discord-bot-setup), [Telegram](/telegram-bot-setup) or [Matrix](/matrix-bot-setup): choose a chat interface, or just use the Web UI.
 - [Printer support](/printer-support) · [Printer profiles](/printer-profiles) · [Troubleshooting](/troubleshooting).
 - [Community Discord](https://discord.gg/mT2Ht3nqZu): support and discussion.

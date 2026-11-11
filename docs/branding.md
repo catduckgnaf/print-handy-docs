@@ -20,7 +20,7 @@ experience for everybody else, Bambu included. It lives in the chat app you
 already have open, so "print this" is one pasted link instead of a sit-down
 session with a slicer.
 
-What it is, in facts: describe a model in Discord, Telegram or Matrix with an optional design model endpoint, then review the OpenSCAD preview and changes; or provide a model link, STL or 3MF without any LLM. Print Handy runs the slicer for you and asks for approval before the print starts. The Web UI provides local chat, status, settings, print data, Wrapped and spool management. Camera monitoring (Pasta Cam), timelapses and the local no-LLM roast engine add the fun. Printer care includes calibration and Spoolman-backed spools, with firmware and plugin/component updates only on eligible Moonraker setups (beta, confirmed actions). One Docker container, or the native standalone bot.
+What it is, in facts: describe a model in Discord, Telegram or Matrix with an optional design model endpoint, then review the OpenSCAD preview and changes; or provide a model link, STL or 3MF without any LLM. Print Handy runs the slicer for you and asks for approval before the print starts. The Web UI provides local chat, status, settings, print data, Pasta Wrapped and spool management. Camera monitoring (Pasta Cam), timelapses and the local no-LLM roast engine add the fun. Printer care includes calibration and Spoolman-backed spools, with firmware and plugin/component updates only on eligible Moonraker setups (beta, confirmed actions). One Docker container, or the native standalone bot.
 
 Local-first is part of the pitch, not a footnote: Print Handy was made as a
 local-only solution that runs on the owner's machine and talks to printers on
@@ -44,9 +44,9 @@ Copy these as written. Each one is sized for where it goes. Do not call two nati
 | Use | Length | Copy |
 |---|---|---|
 | Tagline | 6 words | Local first. Local your way. |
-| Link preview, GitHub repo description | under 160 characters | Design with optional AI, or send a model link. Printing, management, Wrapped and Pasta Cam, on your hardware. LLM optional. |
+| Link preview, GitHub repo description | under 160 characters | Design with optional AI, or send a model link. Printing, management, Pasta Wrapped and Pasta Cam, on your hardware. LLM optional. |
 | Store listing or plugin list, one line | one sentence | Design a part with optional AI or send a model link; Print Handy slices it for you, manages spools and printers, and keeps the fun local. |
-| Short paragraph | about 60 words | Print Handy is local first, your way. Describe a part with optional AI or share an STL, 3MF or model link. It handles the slicer and approval, tracks spools with Spoolman, supports printer management and eligible beta firmware updates, and brings Wrapped, Pasta Cam and local roasts. Use the Web UI, Discord, Telegram or Matrix. No LLM required for normal printing. |
+| Short paragraph | about 60 words | Print Handy is local first, your way. Describe a part with optional AI or share an STL, 3MF or model link. It handles the slicer and approval, tracks spools with Spoolman, supports printer management and eligible beta firmware updates, and brings Pasta Wrapped, Pasta Cam and local roasts. Use the Web UI, Discord, Telegram or Matrix. No LLM required for normal printing. |
 
 ## Voice
 

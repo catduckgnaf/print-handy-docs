@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Print Handy',
-  description: 'Design a model with optional AI, or send a model link or file. Print Handy handles slicing and approval, printer management and Wrapped. Local first, your way, with or without an LLM.',
+  description: 'Design a model with optional AI, or send a model link or file. Print Handy handles slicing and approval, printer management and Pasta Wrapped. Local first, your way, with or without an LLM.',
   base: '/print-handy-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -13,10 +13,10 @@ export default defineConfig({
     ['meta', { property: 'og:title', content: 'Print Handy: Local first. Local your way.' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'Print Handy: Local first. Local your way.' }],
-    ['meta', { name: 'twitter:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Wrapped and Pasta Cam. Local first. LLM optional.' }],
+    ['meta', { name: 'twitter:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Pasta Wrapped and Pasta Cam. Local first. LLM optional.' }],
     ['meta', { property: 'og:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
     ['meta', { name: 'twitter:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
-    ['meta', { property: 'og:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Wrapped and Pasta Cam. Local first. LLM optional.' }],
+    ['meta', { property: 'og:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Pasta Wrapped and Pasta Cam. Local first. LLM optional.' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://catduckgnaf.github.io/print-handy-docs/' }],
   ],
