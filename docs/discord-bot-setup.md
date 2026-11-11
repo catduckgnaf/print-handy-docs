@@ -57,7 +57,7 @@ Use one bot token for one bot. Running two bots on the same token makes both ans
 Stop the old owner before starting the new one.
 More generally: **one token, one instance per channel.** Two running instances that serve the same print
 channel (a leftover second instance next to the container is the classic case) each receive every message in
-it and both act, which looks exactly like random bot misbehaviour. Sharing one token across instances is
+it and both act, which looks exactly like random bot misbehavior. Sharing one token across instances is
 supported only with a separate channel per instance, see [multi-instance](./multi-instance.md). The standalone
 bot logs a warning when Discord hands it a second READY on a live session, one sign of a competing login.
 
@@ -339,7 +339,7 @@ Once the bot is running, this is the whole conversation for one print. Every ste
 
 ![Print complete post with timelapse](https://raw.githubusercontent.com/catduckgnaf/print-handy/main/assets/screenshots/discord-04-print-complete.png)
 
-**The camera watchdog** only alerts, unless you enable `visual_watch.auto_pause_early`, which can pause the printer after two suspicious early-layer checks (it never cancels). Every other printer action is your tap. The in-print watch covers Moonraker (Klipper) and Bambu Lab printers only.
+**The camera watchdog** only alerts, unless you enable `visual_watch.auto_pause_early`, which can pause the printer after two independent suspicious early-layer views (it never cancels; set it back to `false` to turn it off). Every other printer action is your tap. The in-print watch covers Moonraker (Klipper) and Bambu Lab printers only; `bot check` names each printer's coverage on its camera watch row.
 
 ![Camera alert with Pause, It's fine and Stop asking for this print](https://raw.githubusercontent.com/catduckgnaf/print-handy/main/assets/screenshots/discord-05-camera-watchdog.png)
 
