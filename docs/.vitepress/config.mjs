@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Print Handy',
-  description: 'Your slicer lives on a desk. You don’t. Share a model link or file, choose filament, review the estimate and approve the job. Runs locally; chat providers, model downloads and optional hosted AI use the network.',
+  description: 'Design a model with optional AI, or send a model link or file. Print Handy handles slicing and approval, printer management and Wrapped. Local first, your way, with or without an LLM.',
   base: '/print-handy-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -10,13 +10,13 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/print-handy-docs/favicon.ico' }],
     ['link', { rel: 'apple-touch-icon', href: '/print-handy-docs/apple-touch-icon.png' }],
     ['meta', { name: 'theme-color', content: '#f97316' }],
-    ['meta', { property: 'og:title', content: 'Print Handy: Bambu Handy for every printer' }],
+    ['meta', { property: 'og:title', content: 'Print Handy: Local first. Local your way.' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'Print Handy: Bambu Handy for every printer' }],
-    ['meta', { name: 'twitter:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
+    ['meta', { name: 'twitter:title', content: 'Print Handy: Local first. Local your way.' }],
+    ['meta', { name: 'twitter:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Wrapped and Pasta Cam. Local first. LLM optional.' }],
     ['meta', { property: 'og:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
     ['meta', { name: 'twitter:image', content: 'https://catduckgnaf.github.io/print-handy-docs/social-preview.png' }],
-    ['meta', { property: 'og:description', content: 'Bambu Handy for every printer. Drop a model link in Discord, Telegram or Matrix, approve it, walk away. It slices, watches for spaghetti and roasts your model.' }],
+    ['meta', { property: 'og:description', content: 'Design with optional AI or send a model link. Print Handy slices for you, manages printers and spools, and adds Wrapped and Pasta Cam. Local first. LLM optional.' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:url', content: 'https://catduckgnaf.github.io/print-handy-docs/' }],
   ],
@@ -25,7 +25,6 @@ export default defineConfig({
     siteTitle: 'Print Handy',
     nav: [
       { text: 'Start here', link: '/guide' },
-      { text: 'Demo', link: '/live-demo' },
       { text: 'Printers', link: '/printer-profiles' },
       { text: 'Everyday use', link: '/project-reference' },
       { text: 'Troubleshooting', link: '/troubleshooting' },
@@ -35,7 +34,6 @@ export default defineConfig({
         text: 'Guide',
         items: [
           { text: 'Introduction', link: '/guide' },
-          { text: 'Live demo', link: '/live-demo' },
           { text: 'Project Reference', link: '/project-reference' },
           { text: 'Multi-part print projects', link: '/projects' },
           { text: 'Listener Domains', link: '/listeners' },
@@ -46,10 +44,9 @@ export default defineConfig({
         text: 'Get started',
         items: [
           { text: 'Docker', link: '/docker' },
-          { text: 'Standalone Bot', link: '/standalone' },
-          { text: 'Hermes Installation', link: '/install' },
+          { text: 'Unraid Community Apps', link: '/docker#unraid-dockerman' },
+          { text: 'Native installation (standalone bot)', link: '/install' },
           { text: 'More Than One Printer', link: '/multi-instance' },
-          { text: 'Bambu A1 with Docker', link: '/bambu-a1-docker' },
         ],
       },
       {
@@ -75,7 +72,6 @@ export default defineConfig({
         items: [
           { text: 'Printer Profiles', link: '/printer-profiles' },
           { text: 'Printer support', link: '/printer-support' },
-          { text: 'AD5X walkthrough', link: '/ad5x-walkthrough' },
           { text: 'AD5X best practices', link: '/device-ad5x' },
           { text: 'ZMod', link: '/zmod' },
           { text: 'Stock Flashforge', link: '/flashforge-stock' },

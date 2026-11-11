@@ -6,12 +6,14 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 ## Start here
 
-- [Docker](./docker.md): the recommended install, with a copy-paste quickstart from nothing to a first print.
-- [Standalone bot](./standalone.md): run without Docker. Choose [Discord](./discord-bot-setup.md), [Telegram](./telegram-bot-setup.md) or [Matrix](./matrix-bot-setup.md).
-- [Native installation](./install.md): install Print Handy without Docker (Python + systemd).
+- [Docker](./docker.md): one-container installation, with the slicer and Spoolman bundled.
+- Available in **Unraid Community Apps**. [Installation details](./docker.md#unraid-dockerman).
+- [Native installation (standalone bot)](./install.md): the same installation path without Docker, using Python and systemd. [Standalone bot configuration](./standalone.md) is its detailed operations reference.
 - [Web UI](./webui.md): local status, setup and settings interface, on by default. It serves openly on your network until you set a login in its walkthrough.
-- [Live demo](./live-demo.md): static, simulated Discord-style chat demo in the browser. No install, no account, nothing prints.
-- [Bambu A1 Docker walkthrough](./bambu-a1-docker.md): hardware-specific steps and verification limits.
+
+## Design without opening a slicer
+
+Describe a model in chat with an optional AI endpoint, preview and revise the OpenSCAD design, then approve the sliced print. Print Handy runs the slicer for you. An LLM is not needed when you use an existing STL, 3MF or model link. See [AI design](./design.md) and [printer support](./printer-support.md).
 
 ## Everyday printing
 

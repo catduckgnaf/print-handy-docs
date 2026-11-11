@@ -3,36 +3,42 @@ layout: home
 
 hero:
   name: "Print Handy"
-  text: "Your slicer lives on a desk. You don’t."
-  tagline: "Drop a model link in chat, pick your colors, approve the slice — then go live your life while it prints. Bambu Handy energy, for every printer. Even Bambu."
+  text: "Design it. Print it. Skip opening a slicer."
+  tagline: "Describe a part with optional AI, or send a model link or file. Print Handy handles the slicing and asks before printing. Local first. Local your way: Web UI, Discord, Telegram or Matrix. LLM or no LLM."
   image:
     src: /logo-dark.png
     alt: Print Handy catduck mascot
   actions:
     - theme: brand
       text: Get Started
-      link: /docker
+      link: /guide
     - theme: alt
-      text: Try the live demo
-      link: /live-demo
+      text: Design a model
+      link: /design
     - theme: alt
-      text: Join the Discord
-      link: https://discord.gg/mT2Ht3nqZu
+      text: Unraid Community Apps
+      link: /docker#unraid-dockerman
 
 features:
-  - icon: 🖨️
-    title: Bambu Handy for everyone — even Bambu
-    details: The find-it, tap-print, check-from-the-sofa phone experience Bambu owners love, brought to Klipper, Flashforge, Prusa, Elegoo, Creality, Sovol, Snapmaker, Qidi, Anycubic and OctoPrint printers — and yes, Bambu too.
+  - icon: 🧩
+    title: Design a model. No slicer app required.
+    details: Describe a part, preview it and request changes with optional AI and OpenSCAD. Or bring your own STL, 3MF or model link. Print Handy slices in the background and asks you to approve the actual job.
   - icon: 🎉
-    title: Fun features!
-    details: A gentle roast when your print starts, timelapses that land in the chat when it finishes, a camera watchdog that watches for spaghetti, and spools that practically manage themselves.
-  - icon: 🧵
-    title: Spoolman built in
-    details: Filament tracking rides along in the same install — no second service to set up. Print Handy matches spools to printer slots and knows what is loaded where.
+    title: Wrapped, Pasta Cam and a little attitude
+    details: Print Handy Wrapped recaps your printing year, with optional local video and sharing. Pasta Cam watches for print failures where supported; timelapses and a built-in, no-LLM roast engine make the rest more fun.
+  - icon: 🛠️
+    title: Complete printer management
+    details: Manage prints, printers, calibration and filament with bundled Spoolman. Check firmware and supported plugin updates where available. In beta, updates are limited by printer family and require confirmation.
   - icon: 🏠
-    title: Local-first
-    details: Runs on your hardware, in your house, with no Print Handy cloud. AI and chat platforms are optional extras, never a requirement.
+    title: Local first. Local your way.
+    details: Runs on your hardware with no Print Handy cloud. Use the local Web UI, Discord, Telegram or Matrix. Ordinary printing and roasts need no LLM; AI design is optional. External chat services carry what you send through them.
 ---
+
+## From idea to printed part
+
+Ask **"design a wall hook with two screw holes"** in chat, review the preview and request changes, then approve the prepared print. AI design needs a configured model endpoint; Print Handy runs OpenSCAD and the slicer for you. **You do not have to open or operate a slicer yourself.**
+
+Prefer no AI? Send an STL, 3MF or model link instead. The same guided slicing, filament choices, checks and final approval work without an LLM. [How design works](/design) · [Printing without an LLM](/standalone) · [Supported printers](/printer-profiles)
 
 ## See it in action
 
@@ -46,11 +52,11 @@ This is the example from the GitHub README — the whole flow, as a scroll throu
 </div>
 <div class="story-text">
 
-**1. Drop a link, pick your colors.**
+**1. Bring a model or design one, then pick your colors.**
 
 Paste a MakerWorld, Printables or Thingiverse link — or just drop an STL or 3MF file into the chat. Print Handy fetches the model, measures it against your printer's bed, and reads the colors the designer used.
 
-Then it asks, part by part, which of *your* loaded filaments each color should print in. Buttons, not commands: if you can tap, you can print.
+Then it asks, part by part, which of *your* loaded filaments each color should print in. Buttons, not commands: if you can tap, you can print. With a configured AI endpoint you can also describe a new part in chat, review its OpenSCAD preview and revise it before Print Handy slices.
 
 </div>
 </div>
@@ -198,20 +204,19 @@ The same works in reverse: what you load through chat is what Spoolman shows. On
 
 ## Why this exists
 
-Bambu owners get a slick phone app: find a model, tap print, check on it from anywhere. Everyone else gets a slicer chained to a desktop, a USB stick, and a walk to the garage to see if the first layer stuck.
+A printer shouldn't require an appointment with a desktop slicer for every job. Describe what you need with optional AI, drop in a model link or upload a file, then let Print Handy prepare the job and ask for approval before it prints.
 
-Print Handy is that phone experience for everybody else. It lives in the chat app you already have open, so "print this" is one pasted link instead of a sit-down session with a slicer. It is also a little mean about your model choices, which is a feature.
+Get status and printer management in the local Web UI, or use the chat you already have open. Wrapped remembers the year. Pasta Cam watches for trouble on supported setups. The roasts don't even need an LLM.
 
-*Not affiliated with Bambu Lab. We just liked their app enough to want it on every other printer.*
+*Not affiliated with Bambu Lab. We just liked their app enough to want that convenience on more printers.*
 
 ## Start here
 
-- [Live demo](/live-demo) — try the conversation in your browser. Nothing installs, nothing prints.
-- [Docker](/docker) — the single-container install: bot, listener and bundled Spoolman in one image.
-- [Introduction](/guide) — the documentation index and how to find the right guide.
-- [Discord bot setup](/discord-bot-setup) — create your Discord application and bot, and hand Print Handy the token and IDs safely.
-- [Printer profiles](/printer-profiles) — find your printer and see what it can do.
-- [AD5X walkthrough](/ad5x-walkthrough) — the Flashforge AD5X with ZMod, end to end.
-- [Web UI](/webui) — a local status and settings page for your own network.
-- [Troubleshooting](/troubleshooting) — troubleshoot by symptom.
-- [Print Handy Discord server](https://discord.gg/mT2Ht3nqZu) — support, chat and the live demo server; ask in #support when you are stuck.
+- Available in **Unraid Community Apps**. [Installation details](/docker#unraid-dockerman).
+- [Docker](/docker): one container with the bot, printer listeners, slicer and bundled Spoolman.
+- [Native installation](/install): the same standalone bot installed with Python and systemd, without Docker.
+- [Design a model](/design): optional AI design in chat, preview and revise before guided slicing.
+- [Web UI](/webui): local chat, status, settings, spool management, print records and Wrapped.
+- [Discord](/discord-bot-setup), [Telegram](/telegram-bot-setup) or [Matrix](/matrix-bot-setup): choose a chat interface, or just use the Web UI.
+- [Printer support](/printer-support) · [Printer profiles](/printer-profiles) · [Troubleshooting](/troubleshooting).
+- [Community Discord](https://discord.gg/mT2Ht3nqZu): support and discussion.
