@@ -39,6 +39,7 @@ export default defineConfig({
           { text: 'Project Reference', link: '/project-reference' },
           { text: 'Multi-part print projects', link: '/projects' },
           { text: 'Listener Domains', link: '/listeners' },
+          { text: 'Writing release notes', link: '/release-notes-guide' },
         ],
       },
       {
