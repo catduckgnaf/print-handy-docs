@@ -38,6 +38,7 @@ export default defineConfig({
           { text: 'Multi-part print projects', link: '/projects' },
           { text: 'Listener Domains', link: '/listeners' },
           { text: 'Writing release notes', link: '/release-notes-guide' },
+          { text: 'Printer accessories', link: '/accessories' },
         ],
       },
       {

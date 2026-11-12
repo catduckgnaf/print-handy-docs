@@ -7,11 +7,7 @@ listing all say the same thing.
 
 ## The pitch
 
-**Local first. Local your way.**
-
-**Design, slice and manage prints without opening a slicer.**
-
-Bambu Handy for every printer.
+**Bambu Handy for every printer.**
 
 Bambu owners get a slick phone app: find a model, tap print, check on it from
 anywhere. Everyone else gets a slicer chained to a desktop, a USB stick, and a
@@ -26,7 +22,7 @@ Local-first is part of the pitch, not a footnote: Print Handy was made as a
 local-only solution that runs on the owner's machine and talks to printers on
 the local network, with no Print Handy account and no Print Handy cloud. AI
 is optional, and Discord is optional; neither is needed for the core flows.
-Say so wherever there is room, in those words or close to them — and never
+Say so wherever there is room, in those words or close to them, and never
 stretch it into "nothing leaves the house": the chat provider the owner picks
 carries the messages, files and photos sent through it, like any other
 message on that platform.
@@ -39,7 +35,7 @@ room for it:
 
 ## Copy by length
 
-Copy these as written. Each one is sized for where it goes. Do not call two native bot guides two install methods. Print Handy is available in Unraid Community Apps.
+Copy these as written. Each one is sized for where it goes.
 
 | Use | Length | Copy |
 |---|---|---|
@@ -53,8 +49,6 @@ Copy these as written. Each one is sized for where it goes. Do not call two nati
 - **Funny about the model, never about safety.** Keep approval prompts, heat and motion warnings, refusals and errors plain and exact. Put roasts only where they belong: one per print on the completion post, the failure and cancel posts, and a confirmed-spaghetti camera alert, drawn from the local roast corpus (no LLM, no endpoint, #1002); never in safety copy.
 - **Short, concrete and task-first.** Say what the reader can do, then link to details. Avoid repetitive reassurance and exhaustive inventories on entry pages.
 - **Local-first, stated honestly.** Print Handy itself runs on the owner's machine and has no Print Handy cloud. Chat providers carry messages and files; model downloads and optional hosted AI use the network. Never claim that nothing leaves the house.
-- **No manual slicer means no slicer app to operate, not no slicing.** Print Handy still uses OrcaSlicer or the configured slicer in the background. AI design requires a configured endpoint and OpenSCAD; printing existing models does not need an LLM.
-- **Beta updates are limited.** Firmware and plugin component updates are guarded and apply only to eligible Moonraker configurations. Other families get information or manual guidance. Print Handy does not update its own container, Spoolman or OrcaSlicer through that command.
 - **Mark optional features clearly.** Camera monitoring, AI, live viewing and printer controls are optional or separately enabled. Do not imply camera analysis guarantees safe unattended printing.
 - **Describe supported paths, not every printer.** Name connection families in short copy and link to the current support guide. Distinguish code coverage from hardware verification. Never imply certification.
 - **Preserve approvals.** State that the exact sliced job needs human approval before printing. Do not suggest a model estimate or bounding box proves a safe physical print.

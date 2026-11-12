@@ -8,7 +8,7 @@ has not been checked on real hardware.
 Each page names the firmware and hardware it was written against. If
 your printer runs something else, treat the page as a starting point,
 not a contract. The contracts stay in their own pages
-([ZMod printers](./zmod.md), [AD5X integration contract](./ad5x-contract.md),
+([ZMod printers](./zmod.md), [AD5X implementation contract](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/AD5X-CONTRACT.md) (a developer record),
 [Printer calibration](./calibration.md), [Settings reference](./settings.md)).
 
 ## Devices
