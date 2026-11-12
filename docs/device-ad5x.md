@@ -205,7 +205,32 @@ path, and report what you saw in the support Discord or as a GitHub issue.
   Spoolman should be corrected there, or Print Handy may offer a slot that
   just ran out.
 - After a runout, answer the spool question first. Then start the next
-  print.
+  print. Until it is answered, filament usage stays paused. If the spool
+  that ran out is back in its slot (still assigned to that slot and
+  reading loaded) when the next print starts or the spool sync runs,
+  Print Handy closes the question as a refeed and says so. Otherwise the
+  next print starts anyway with one notice that usage is paused, and
+  reminders slow to every 6 hours once the print that ran out is over.
+- If the print pauses again within 10 minutes of resuming after a runout,
+  on the same slot, the new filament usually has not reached the toolhead
+  yet. Print Handy treats that as the same runout: it rewrites the runout
+  alert in place ("Paused again: the filament has not reached the toolhead
+  yet") with fresh Resume and Cancel buttons, and does not ask the spool
+  question again. Feed the filament until it comes out of the nozzle, then
+  resume.
+- A multicolor print charges no spool while it runs: Moonraker can only
+  charge one spool, so the launch clears its active spool. When the print
+  ends, the listener charges each slot's spool its share through Spoolman:
+  the per-tool grams from the G-code header (`; filament used [g]`), sent
+  to the spool that sat in each mapped slot when the print started. A
+  cancelled or stopped print is charged in proportion to the filament it
+  used. Each print is charged once (a restart or a repeated end event does
+  not charge again), a charge Spoolman could not take is retried when
+  Spoolman answers again, and nothing is charged while an open spool
+  question has filament usage paused. The finish post names each slot's
+  charge. A multicolor print that finished while the listener was down is
+  charged the same way when its finish is posted from the printer's job
+  history, and only once.
 
 ## Camera and timelapse
 
