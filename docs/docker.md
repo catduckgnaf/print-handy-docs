@@ -133,7 +133,7 @@ Which printers have the in-print watch:
 | Elegoo SDCP | No | No in-print verdicts; no SDCP camera source is verified yet |
 | stock Flashforge | No | Idle plate checks only, no in-print verdicts |
 
-Both watched families follow one shared rule set: the same sensitivity profiles, the early-layer schedule for risky prints, the 150-second check deadline with a notice when a check times out, one throttled alert per camera or vision failure episode with one notice when checks work again, and the same opt-in `visual_watch.auto_pause_early`. When on, auto-pause sends one pause after two independent suspicious early-layer views (at least 60 seconds apart, with a camera frame that changed between them) while the printer still reports printing this print; it never cancels, and setting it back to `false` turns it off. `bot check` shows a **camera watch** row per printer with its family's coverage and, when the watch cannot run, why.
+Both watched families follow one shared rule set: the same sensitivity profiles, the early-layer schedule for risky prints, the 150-second check deadline with a notice when a check times out, one throttled alert per camera or vision failure episode with one notice when checks work again, and the same opt-in `visual_watch.auto_pause_early`. When on, auto-pause sends one pause after two independent suspicious early-layer views (at least 60 seconds apart, with a camera frame that changed between them) while the printer still reports printing this print; it never cancels, and setting it back to `false` turns it off. `bot check` shows a **camera watch** row per printer with its family's coverage and, when the watch cannot run, why. Each running listener also reports its printer's coverage in its heartbeat (active, or off and why: no camera configured, no vision route, `visual_watch.enabled` false, or a family without the in-print watch); the row adds it as `listener reports: ...`, and the diagnostics bundle shows it beside each printer's heartbeat age. One shared core (`print_handy/runtime/camera_watch.py`) holds these rules for every family.
 
 A completely dark frame is treated as a camera problem, not a print verdict: it is never sent to the vision model and never posts as a print alert. When the watchdog reads its stills from the go2rtc fan-out and the fan-out frame is completely dark, it falls back to the direct camera snapshot once. If the frame is still dark, the check is logged and, at most once per print, a plain camera notice (with only the **Stop asking for this print** button) says the camera image is completely dark and monitoring continues. Timelapse capture applies the same rule: dark frames are skipped and counted rather than recorded, and a print whose every captured frame was dark ends with no video and a completion post that names the dark camera as the reason.
 
@@ -279,7 +279,7 @@ Intel iGPU or AMD GPU:
 1. In the Unraid terminal, check the device exists and note its group: `ls -l /dev/dri` and `stat -c %g /dev/dri/renderD128`. On an Intel iGPU with no `/dev/dri`, install the **Intel GPU TOP** plugin (it loads the `i915` driver). AMD GPUs normally load `amdgpu` by themselves, or use the **Radeon TOP** plugin.
 2. Edit the container and switch to **Advanced View**: the template's **Hardware Acceleration (Intel / AMD)** device entry ships with an empty value so hosts without an iGPU still start: set its value to `/dev/dri` (its default) and add `--group-add=GID` to **Extra Parameters**, with the GID from step 1. The container runs as uid 1000, not root, so without `--group-add` the device is visible but unusable.
 3. Apply, then check from the Unraid terminal: `docker exec print-handy vainfo --display drm --device /dev/dri/renderD128`. It should list an H.264 `VAEntrypointEncSlice` (or `…EncSliceLP`) line.
-4. Leave `timelapse.capture_encoder` on `auto` in the config file, or set `vaapi` (Intel or AMD) or `qsv` (Intel, amd64).
+4. Set `timelapse.capture_encoder` to `auto` in the config file (the default is `cpu`), or to `vaapi` (Intel or AMD) or `qsv` (Intel, amd64).
 
 NVIDIA:
 
@@ -287,7 +287,7 @@ NVIDIA:
 2. Edit the container, switch to **Advanced View**, and add `--runtime=nvidia` to **Extra Parameters**.
 3. Switch to **Advanced View** and set **NVIDIA Visible Devices** (`NVIDIA_VISIBLE_DEVICES`) to your GPU UUID, or `all`. The template ships it empty, which grants no GPU. **NVIDIA Driver Capabilities** (`NVIDIA_DRIVER_CAPABILITIES`) ships as `compute,video,utility`, the same as the image default. If you change it, keep `video` in it (or use `all`), or NVENC cannot load. Both variables are optional, and do nothing without `--runtime=nvidia`.
 4. Apply, then check: `docker exec print-handy ls /dev/nvidia0` and `docker exec print-handy sh -c 'ldconfig -p | grep libnvidia-encode'`.
-5. Leave `timelapse.capture_encoder` on `auto` in the config file, or set `nvenc`.
+5. Set `timelapse.capture_encoder` to `auto` in the config file (the default is `cpu`), or to `nvenc`.
 
 A host with both an iGPU and an NVIDIA card can grant either one or both. `auto` tries VAAPI (the iGPU) first, and `nvenc` moves NVIDIA first.
 
@@ -444,7 +444,7 @@ Rollback limits:
 - Take a copy of `./data` before an upgrade across 2.2.5 if the data matters.
 
 The container healthcheck and `python3 -m print_handy.doctor` report which
-path is in use. An explicit `PRINT_HANDY__PATHS__HERMES_HOME=/data/hermes`
+path is in use. An explicit `PRINT_HANDY__PATHS__STATE_HOME=/data/hermes`
 setting is honored unchanged. The `/data/hermes` fallback stays for at
 least two minor releases; a later release will remove it with a
 release-note warning.
@@ -466,7 +466,7 @@ To adopt the new name (optional, any time before that removal):
    template instead points its **State** path at `/data/state` with host
    folder `/mnt/user/appdata/print-handy/state` and drops the legacy
    **State (legacy /data/hermes)** path if it is still mapped.
-4. If you set `PRINT_HANDY__PATHS__HERMES_HOME` or `logging.file`
+4. If you set `PRINT_HANDY__PATHS__STATE_HOME` or `logging.file`
    explicitly, change `/data/hermes` in those values to `/data/state`.
 5. Start the container and check the startup log: the deprecation line is
    gone, and the healthcheck's state volume row names `/data/state`.

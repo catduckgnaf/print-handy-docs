@@ -49,7 +49,7 @@ only to the data folder's `.env` file (mode 600); it is never printed or written
 Doing it by hand instead:
 
 - Docker: put `DISCORD_BOT_TOKEN=...` and `PRINT_HANDY__DISCORD__CHAT_ID=...` in the `.env` file next to `docker-compose.yml` (the [Docker quickstart](./docker.md#first-run-configuration) has the whole sequence), then `docker compose up -d`.
-- Standalone: put `DISCORD_BOT_TOKEN=...` in `~/.local/share/print-handy/.env` (or your `paths.hermes_home`),
+- Standalone: put `DISCORD_BOT_TOKEN=...` in `~/.local/share/print-handy/.env` (or your `paths.state_home`),
   and set `discord.chat_id` in `config/local.yaml` (`discord.allowed_user_ids` is optional; see
   [Who can use the bot](#who-can-use-the-bot)). See [standalone bot](./standalone.md).
 
@@ -71,14 +71,14 @@ bot:
   sync_commands: true
   health_port: 0
 paths:
-  hermes_home: ~/.local/share/print-handy
+  state_home: ~/.local/share/print-handy
 discord:
   chat_id: "123456789012345678"             # replace with your channel ID
   allowed_user_ids: ""                      # optional whitelist; empty lets everyone in the channel use the bot
   token_env: DISCORD_BOT_TOKEN
 ```
 
-These IDs are placeholders, not usable setup values. `paths.hermes_home` is the data directory;
+These IDs are placeholders, not usable setup values. `paths.state_home` is the data directory;
 its name is historical and does not require Hermes. Keep the printer-specific configuration
 created by the installer. This example only shows the Discord fields.
 
@@ -307,6 +307,12 @@ household, exactly as you would for print approvals.
 - One bot serves one printer's camera per instance (the multi-instance rule): a second
   printer is a second Print Handy instance with its own channel, tunnel hostname and
   settings.
+- The printer's own screen is never the camera. Z-Mod lists its screen as a webcam
+  entry (the `WEB_SCREEN` redirect), and screen UIs can carry prompts and information
+  meant for whoever is standing at the printer. Automatic camera selection from the
+  webcam registry skips screen feeds, and every live view that resolves its source
+  there gets that rule. A printer whose only listed feed is its screen reports that
+  no camera is available instead of streaming the display.
 
 ### Support and verification matrix
 
