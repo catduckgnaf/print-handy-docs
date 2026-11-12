@@ -73,7 +73,7 @@ services:
 
 Put the token in the environment variable `[telegram] token_env` names
 (`TELEGRAM_BOT_TOKEN` by default), in the process environment or in the
-`.env` file in `paths.hermes_home`, mode 600. Never put the token in a
+`.env` file in `paths.state_home`, mode 600. Never put the token in a
 config file. Every setting can also come from the environment, for
 example `PRINT_HANDY__TELEGRAM__CHAT_ID=-1001234567890`.
 
@@ -229,12 +229,14 @@ require_confirmation`) and the project's `bot/configuration.py` /
 
 - **Buttons**: prompts are inline keyboards. Answering edits the message
   to remove the keyboard and record the choice.
-- **Alert buttons**: pause and stop alerts carry their Resume / Cancel
-  buttons on Telegram too, as an inline keyboard with the same actions
+- **Alert buttons**: on Moonraker (Klipper and ZMod) printers, pause and
+  stop alerts carry their Resume / Cancel buttons on Telegram too, as an inline keyboard with the same actions
   as Discord; a press re-reads the printer first, exactly like a Discord
   click. The listener's other button posts (plate picker, insertion and
   spool questions) are still sent as plain text on Telegram. The text
-  names the typed command or reply that does the same job.
+  names the typed command or reply that does the same job. Pause alerts
+  from Bambu Lab, PrusaLink, OctoPrint, SDCP and stock Flashforge
+  printers stay plain text on Telegram and name the typed command.
 - **Messages are plain text.** No Markdown parse mode is set, so file
   names, model names and G-code fragments are shown exactly as written
   (Discord's `**bold**` markers appear literally).

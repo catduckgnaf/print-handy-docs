@@ -709,7 +709,7 @@ A model failure posted to chat used to be "stopped before it was ready" or a sli
 - **Recovery:** the one thing to do next.
 - **What was submitted:** "Nothing was uploaded or started." when the failure happened before anything left Print Handy, "The file is on the printer, but nothing is printing." when the printer rejected the start, and "The printer may already have the file or have started it" when the outcome is unknown (an upload or launch that was not confirmed).
 
-The generic "Preparing that model stopped before it was ready." lead is kept only for a failure nothing recognizes, and it still names the stage and the bundle step. A slicer failure with no known signature says what the slicer reported only when that is one short sentence with no path, file name or traceback in it; otherwise nothing from the slicer's text is quoted. The raw logs stay in the archived failure folder (`<hermes_home>/state/slice-failures/<id>/`), and the Web UI status page lists the newest folders under "Recent model failures". Each receipt records the classification under `failure` (stage, cause, recovery, submitted, signature). A corpus guard (`tests/corpus/test_failure_messages.py`) fails if a known-bad corpus model ends in the generic message.
+The generic "Preparing that model stopped before it was ready." lead is kept only for a failure nothing recognizes, and it still names the stage and the bundle step. A slicer failure with no known signature says what the slicer reported only when that is one short sentence with no path, file name or traceback in it; otherwise nothing from the slicer's text is quoted. The raw logs stay in the archived failure folder (`<state_home>/state/slice-failures/<id>/`), and the Web UI status page lists the newest folders under "Recent model failures". Each receipt records the classification under `failure` (stage, cause, recovery, submitted, signature). A corpus guard (`tests/corpus/test_failure_messages.py`) fails if a known-bad corpus model ends in the generic message.
 
 ## Audit inventory (Stage 1)
 
@@ -753,10 +753,14 @@ critical below) attaches the bundle automatically.
 
 What the bundle carries beyond versions and the redacted config summary:
 
-- **Runtime status**: the image tag and commit SHA when the environment
-  records them (`PRINT_HANDY_IMAGE_TAG` / `PRINT_HANDY_IMAGE_SHA`; the
-  image digest is always shown when present), each printer's listener
-  heartbeat age and event-loop lag, the supervisor's persisted restart
+- **Runtime status**: the image tag and commit SHA
+  (`PRINT_HANDY_IMAGE_TAG` / `PRINT_HANDY_IMAGE_SHA`; the release,
+  develop and nightly images have both stamped in by the workflow that
+  publishes them, a local build says "not recorded", and a value you set
+  on the container wins; the image digest is always shown when present),
+  each printer's listener heartbeat age and event-loop lag, the camera
+  watch coverage the listener reported (active, or off and why), the
+  supervisor's persisted restart
   counts per printer (including a spent budget), and the
   capture-directory names with their lengths, one real hang was a
   capture name that outgrew its limit.
@@ -788,7 +792,10 @@ other local path is removed.
 restart record (`supervisor_listener.json` in the printer's state
 directory). When a listener's restart budget is spent, the bot's next
 outage notice for that printer is a louder **CRITICAL** post naming both
-bundle commands, pinned in Discord where pinning is available; hourly
+bundle commands, pinned on Discord, Telegram and Matrix (a Telegram
+group bot needs the pin right and a Matrix bot the power level to change
+room state; without it the notice still posts, unpinned; Web UI chat
+has no pins); hourly
 reminders afterwards keep naming the exhaustion. **Degraded notices:**
 while a listener is down, the bot also polls Moonraker directly, and a
 pause, error or stop the printer itself reports gets one degraded

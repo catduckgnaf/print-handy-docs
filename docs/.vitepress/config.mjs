@@ -39,6 +39,7 @@ export default defineConfig({
           { text: 'Listener Domains', link: '/listeners' },
           { text: 'Writing release notes', link: '/release-notes-guide' },
           { text: 'Printer accessories', link: '/accessories' },
+          { text: 'Print Handy status voice', link: '/status-voice' },
         ],
       },
       {

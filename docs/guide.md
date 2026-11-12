@@ -23,6 +23,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 - [Design a part](./design.md): optional AI-assisted OpenSCAD design. Review the result before the usual approval flow.
 - [Edit a prepared model](./editing.md): confirmed edit operations and limits. OrcaSlicer warning behavior is covered in [Slicer warnings](./slicer-warnings.md).
 - [Printer profiles](./printer-profiles.md): supported delivery methods and verification limits.
+- [Status voice](./status-voice.md): the local, no-AI sarcastic quips on intake progress, the copy-count Easter eggs, and how roasts rotate.
 - [Printer accessories](./accessories.md): hardware fitted to one printer that did not ship with its model, including the Bondtech INDX tool changer for Klipper printers.
 - [More than one printer](./docker.md#more-than-one-printer): one instance serves a whole printer roster, declare every printer in one config file; the full roster reference is the [Printers list](./settings.md#printers-list). Running [separate instances](./multi-instance.md) stays available when you want hard process isolation.
 
