@@ -122,6 +122,19 @@ Run a second *instance* instead only when you want hard process isolation betwee
 
 While a print runs, the listener checks the printer camera at layer 2, layer 5 and then periodically. A vision model classifies each frame; spaghetti, a detached part, an empty bed, a stalled print, an uncertain frame or a failed check posts the camera photo to Discord with **Pause**, **It's fine** and **Stop asking for this print** buttons. **Stop asking for this print** mutes camera posts for that print only. The next print asks again, even if it has the same filename. The optional camera watchdog posts alerts after checks. Its alert-only behavior is separate from `visual_watch.auto_pause_early`, an opt-in that can pause the printer after two suspicious early-layer checks; it is off by default. Do not describe the whole feature as incapable of affecting printer state. Camera classification is not a guarantee of safe unattended printing.
 
+Which printers have the in-print watch:
+
+| Printer family | In-print camera watch | Notes |
+|---|---|---|
+| Moonraker (Klipper) | Yes, every print on the printer (the listener) | Prints without layer numbers are checked on a timer, with one notice |
+| Bambu Lab | Yes, prints Print Handy launched (the launched-print monitor) | Prints started from Bambu Studio or the printer screen are not watched |
+| PrusaLink | No | Idle plate checks only, no in-print verdicts |
+| OctoPrint | No | Idle plate checks only, no in-print verdicts |
+| Elegoo SDCP | No | No in-print verdicts; no SDCP camera source is verified yet |
+| stock Flashforge | No | Idle plate checks only, no in-print verdicts |
+
+Both watched families follow one shared rule set: the same sensitivity profiles, the early-layer schedule for risky prints, the 150-second check deadline with a notice when a check times out, one throttled alert per camera or vision failure episode with one notice when checks work again, and the same opt-in `visual_watch.auto_pause_early`. When on, auto-pause sends one pause after two independent suspicious early-layer views (at least 60 seconds apart, with a camera frame that changed between them) while the printer still reports printing this print; it never cancels, and setting it back to `false` turns it off. `bot check` shows a **camera watch** row per printer with its family's coverage and, when the watch cannot run, why.
+
 A completely dark frame is treated as a camera problem, not a print verdict: it is never sent to the vision model and never posts as a print alert. When the watchdog reads its stills from the go2rtc fan-out and the fan-out frame is completely dark, it falls back to the direct camera snapshot once. If the frame is still dark, the check is logged and, at most once per print, a plain camera notice (with only the **Stop asking for this print** button) says the camera image is completely dark and monitoring continues. Timelapse capture applies the same rule: dark frames are skipped and counted rather than recorded, and a print whose every captured frame was dark ends with no video and a completion post that names the dark camera as the reason.
 
 It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: a vision endpoint (`PRINT_HANDY__SERVICES__VISION_CHAT_URL` plus the `CLIPROXY_API_KEY` secret in `.env`), a `PRINT_VISION_URL` custom endpoint, or the built-in local failure detector (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED=true`, #455: an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
@@ -138,7 +151,7 @@ Two settings tune it, settable in the mounted YAML (`visual_watch` in `config/do
 | `visual_watch.sensitivity` | `PRINT_HANDY__VISUAL_WATCH__SENSITIVITY` | `3` | How readily the watchdog alerts, 1 (quietest) to 5 (most alerts) |
 | `visual_watch.early_layers` | `PRINT_HANDY__VISUAL_WATCH__EARLY_LAYERS` | `10` | Early-layer window (layers) for risky prints |
 | `visual_watch.early_interval_s` | `PRINT_HANDY__VISUAL_WATCH__EARLY_INTERVAL_S` | `120` | Check interval (seconds) during early-layer mode for risky prints |
-| `visual_watch.auto_pause_early` | `PRINT_HANDY__VISUAL_WATCH__AUTO_PAUSE_EARLY` | `false` | Optional printer control (Moonraker printers only): pauses after two independent suspicious early-layer views, at least 60 s apart with a changed camera frame, when enabled. Off by default |
+| `visual_watch.auto_pause_early` | `PRINT_HANDY__VISUAL_WATCH__AUTO_PAUSE_EARLY` | `false` | Optional printer control (Moonraker and Bambu Lab printers): pauses after two independent suspicious early-layer views, at least 60 s apart with a changed camera frame, when enabled. Off by default |
 
 Sensitivity also sets the periodic check interval (30, 20, 15, 10 or 7.5 minutes for levels 1 to 5) and how many unchanged layers count as a stall; level 3 is the original behavior. Periodic checks run on a timer independent of layer events, so long layers receive timely checks. In early-layer mode for risky prints, checks run every layer change up to `early_layers` and at least every `early_interval_s` seconds. An empty bed (`empty_idle`) while printing schedules a 60-second re-check and alerts if it repeats. The full per-level table is in the [project reference](./project-reference.md#camera-stall-sensitivity), and every setting is listed in [SETTINGS.md](./settings.md). Restart the container after a change; settings are read once at start.
 
@@ -226,14 +239,14 @@ With `timelapse.capture_enabled` on, the Moonraker listener also captures frames
 - **Interval versus layer:** Moonraker only sends a status event when something changes, and during a print that is the layer number. So `layer` captures one frame per layer, and `interval` and `both` now run their own timer, one beat every `timelapse.capture_interval_s` while the printer is `printing` and a capture session is open. The timer stops on pause, complete, cancel and disconnect, never blocks the websocket loop, and shares the single-flight capture with the layer events, so `both` cannot double up. `layer` mode behaves as before. ZMod's moonraker-timelapse (`mode: layermacro`) still renders its own copy on the printer; that file is independent of this capture and is not renamed or replaced.
 - **Storage:** frames land under the existing cache discipline at `<cache>/timelapse/<job>/frames/frame-000001.jpg`, with a `capture.json` manifest (job, trigger, frame/byte counts, final state) beside them: per-plate jobs keep separate directories, so the Stage 3 encode and the plan combine keep working per plate. Per-job caps `timelapse.capture_max_frames` (3600) and `timelapse.capture_max_bytes` (512 MiB) bound the storage (0 disables a cap); capture stops at a cap and keeps the frames already taken. Finished and abandoned capture directories are pruned under `timelapse.local_retention_days`, like the other local timelapse copies.
 - **Failure posture:** capture is a side feature and fails soft, like the Spoolman warning-only rule. A dead camera, a stopped go2rtc or a full disk costs frames (logged, with the source URL redacted) and never delays, blocks or fails a print or its completion post.
-- **Encoder preference:** `timelapse.capture_encoder` (`auto` | `vaapi` | `nvenc` | `qsv` | `cpu`) chooses the Stage 3 assembly encoder; `auto` tries VAAPI, then NVENC, then QSV, then CPU.
+- **Encoder preference:** `timelapse.capture_encoder` (`cpu` | `auto` | `vaapi` | `nvenc` | `qsv`) chooses the Stage 3 assembly encoder; the default `cpu` uses `libx264` without probing GPUs. `auto` tries VAAPI, then NVENC, then QSV, then CPU.
 
 ### Encode and delivery (stage 3)
 
 When a print finishes, the captured frames are assembled into the timelapse the completion post carries:
 
-- **Assembly:** frames play back at 30 fps into one H.264 MP4 (scaled to at most 1280 wide, `+faststart`, no audio, the same shape Discord clients already play). The encoder is picked by probing the real ffmpeg and the devices present: `timelapse.capture_encoder` is the preference (`auto` = VAAPI → NVENC → QSV → CPU), and a hardware encoder that fails, or whose output misses the size cap on both bitrate attempts (budget-derived, then 70%, the sizing shrink's strategy), falls through to the next candidate. CPU `libx264` is always the last candidate, so a missing GPU can never fail a timelapse.
-- **Playback length:** the frame rate is chosen from the frame count so the video lands near `timelapse.target_length_s` (20 s), clamped to `timelapse.min_fps` (10) and `timelapse.max_fps` (60). If the clamp still leaves it longer than the target, frames are evenly decimated; if it is shorter than `timelapse.min_length_s` (5 s), frames are held. `timelapse.hold_last_frame_s` (1 s) keeps the final frame on screen. Bambu, Elegoo and Prusa timelapses use the same plan. `PLAYBACK_FPS` (30) remains the fallback when the settings are unusable. Example at the defaults, including the 1 s end hold: 11 frames are held to 6 s at 10 fps, 115 frames play in 12.5 s at 10 fps, and 1270 or 4300 frames play at 60 fps, decimated to 21 s.
+- **Assembly:** frames play back at 30 fps into one H.264 MP4 (scaled to at most 1280 wide, `+faststart`, no audio, the same shape Discord clients already play). The encoder is picked by probing the real ffmpeg and the devices present: `timelapse.capture_encoder` is the preference (`auto` = VAAPI → NVENC → QSV → CPU), and a hardware encoder that fails, or whose output misses the size cap on both bitrate attempts (budget-derived, then 70%, the sizing shrink's strategy; the budget is capped at 300 kbit per output frame, 3000k at 10 fps, so a short clip no longer spends the whole upload cap), falls through to the next candidate. CPU `libx264` is always the last candidate, so a missing GPU can never fail a timelapse.
+- **Playback length:** the frame rate is chosen from the frame count so the video lands near `timelapse.target_length_s` (20 s), clamped to `timelapse.min_fps` (10) and `timelapse.max_fps` (60). If the clamp still leaves it longer than the target, frames are evenly decimated; if it is shorter than `timelapse.min_length_s` (5 s), frames are held. `timelapse.hold_last_frame_s` (1 s) keeps the final frame on screen. Bambu, Elegoo and Prusa timelapses use the same plan. `PLAYBACK_FPS` (30) remains the fallback when the settings are unusable. The assembly log counts the frames it encoded and says where any extra or missing ones came from, for example `109 frame(s) (99 captured, +10 holding the last frame 1 s)`. Example at the defaults, including the 1 s end hold: 11 frames are held to 6 s at 10 fps, 115 frames play in 12.5 s at 10 fps, and 1270 or 4300 frames play at 60 fps, decimated to 21 s.
 - **Delivered names:** the Discord attachment and the copy in `/data/timelapses` are named from the print record as `<YYYYMMDD-HHMM start time>-<model name>-print-<record number>.mp4`, for example `20261104-1638-Center-B-V5-PRINT-DIAGONAL-print-42.mp4`. The start time uses the configured display timezone, the name is filesystem safe and at most 100 characters, and the gcode hash is never part of it. The post caption carries `Print #<record number>`. The same naming applies to Moonraker, Bambu, Elegoo and Prusa. With no print record the capture folder name is used. Existing archive files are not renamed.
 - **One selection, three call sites:** the same encoder selection and the same encoder seam drive the frame assembly, the Discord sizing shrink (`timelapse.encoder`, #314) and the multi-plate plan combine re-encode. The final video still has to fit the platform upload cap (`discord.upload_max_bytes`, 9,500,000 bytes by default on Discord). The cap is unchanged.
 - **Fallback order:** the completion post carries the in-container captured video when capture produced one; otherwise the printer-rendered moonraker-timelapse download, exactly as before (that path is not removed); otherwise no video. Any capture or encode failure degrades to the next step, and a total failure posts the completion text alone: a failed attachment is never reported as delivered, and the completion acknowledgement is unaffected.
@@ -255,7 +268,7 @@ What the published image carries, per vendor (Debian trixie packages):
 
 AMD's AMF encoders are not in Debian's ffmpeg build and need AMD's proprietary runtime, so AMD encodes through VAAPI. QSV is amd64-only. On an Intel generation where the free `intel-media-va-driver` has no H.264 encode entry point, `vainfo` shows no `VAEntrypointEncSlice`/`VAEntrypointEncSliceLP` line for H.264, and the encode falls back to CPU.
 
-`timelapse.capture_encoder` picks the preference: `auto` tries VAAPI, then NVENC, then QSV, then CPU. A GPU counts only when it is really usable: an Intel/AMD GPU needs a `/dev/dri/renderD*` node the container user (uid 1000) can read and write. A `/dev/dri` mapped without its group is reported as such instead of being tried. An NVIDIA GPU needs a `/dev/nvidia*` device from the NVIDIA runtime.
+`timelapse.capture_encoder` picks the preference: `auto` tries VAAPI, then NVENC, then QSV, then CPU. A GPU counts only when it is really usable: an Intel/AMD GPU needs a `/dev/dri/renderD*` node the container user (uid 1000) can read and write and whose kernel driver is not `nvidia`. VAAPI opens the first such node (`renderD129` when an NVIDIA card took `renderD128`), not a fixed `renderD128`. To pin one, set `PRINT_HANDY_VAAPI_DEVICE` to the node path in the container environment, for example `/dev/dri/renderD129`. A `/dev/dri` mapped without its group is reported as such instead of being tried. Before the first VAAPI encode, Print Handy opens the chosen node once with ffmpeg's `-vaapi_device` on a one-frame test input; a node that will not open (for example an NVIDIA node that a limited `/sys` in the container does not name as NVIDIA, or an Intel/AMD node without its VA driver) is skipped for the life of the process, and the log names the node and ffmpeg's error. An NVIDIA GPU needs a `/dev/nvidia*` device from the NVIDIA runtime.
 
 **Security note:** granting `/dev/dri` or an NVIDIA GPU widens the container's access to the host. A device is not a network port, and a compromised container with GPU access has more host surface than one without. That is why passthrough is opt-in and off by default in both deployment files, exactly like a host capability the operator chooses to grant.
 
@@ -329,33 +342,33 @@ As of 2.2.2 the shipped Docker default model is `klipper.generic` (it was `flash
 
 ## Pinning the image
 
-`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.2.7` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
+`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.2.9` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
 
-The current release is 2.2.7. Its index digest, read from GHCR on 2026-11-08, is the same digest `:latest` pointed at that day:
+The current release is 2.2.9. Its index digest, read from GHCR on 2026-11-11, is the same digest `:latest` pointed at that day:
 
 ```text
-ghcr.io/catduckgnaf/print-handy@sha256:36d44e6c3bfd285deb671508217e0296fcf8d26e39fc17bd5f6e69414b762a48
+ghcr.io/catduckgnaf/print-handy@sha256:e7358f7363af4b67e46cc26c78289c24926f6e7ddb54558eb81a6a31858da9ec
 ```
 
-That digest is the amd64 and arm64 index, not one architecture's image. The in-repo Unraid template's `Repository` is this value. Compose has no default image: set `PRINT_HANDY_IMAGE` in `.env` to the same digest.
+That digest is the amd64 and arm64 index, not one architecture's image. The Unraid templates (in-repo and Community Applications) never pin it: their `Repository` is `:latest`, so Unraid offers each release as a normal container update. Pin on your own install only if you want to hold a version. Compose has no default image: set `PRINT_HANDY_IMAGE` in `.env` to the same digest.
 
 Confirm a tag still points where you think before you pin it:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.2.7
+docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.2.9
 ```
 
 The `Digest:` line of the index is the value to pin. The per-architecture lines under `Manifests:` are not.
 
 ### Change an existing Unraid install
 
-This is the edit. It is not applied by installing this repository.
+This is an optional, per-install edit for holding a version. The templates stay on `:latest`; installing either template never applies it.
 
 1. Copy the live template first: `/boot/config/plugins/dockerMan/templates-user/my-print-handy.xml` to a dated `.bak` beside it.
 2. Change only the `Repository` element, from the moving tag to the digest:
 
 ```xml
-<Repository>ghcr.io/catduckgnaf/print-handy@sha256:36d44e6c3bfd285deb671508217e0296fcf8d26e39fc17bd5f6e69414b762a48</Repository>
+<Repository>ghcr.io/catduckgnaf/print-handy@sha256:e7358f7363af4b67e46cc26c78289c24926f6e7ddb54558eb81a6a31858da9ec</Repository>
 ```
 
 3. Leave every path, port, variable and `ExtraParams` value as it is. In particular do not drop a volume: every appdata path and any extra mounts (account tokens, timelapse archive) stay.
@@ -499,6 +512,51 @@ volume:
   or `grep -h "stop reason" /mnt/user/appdata/print-handy/state/logs/*.log`.
   `print-handy diagnostics` includes the newest file's tail.
 
+### The container stops: a data folder is not writable
+
+Before it migrates anything or starts a service, the entrypoint checks that
+the container user (UID 1000) can write `/data` and each data folder it uses:
+`/data/state` (and its `state` and `logs` folders), `/data/archive`,
+`/data/records`, `/data/cache`, and `/data/spoolman` with its `config`, `logs`
+and `backups` folders when the bundled Spoolman is on. A folder that does not
+exist yet is skipped; its parent is checked and the folder is created later.
+The check writes and removes one temporary file; it never changes your data.
+For the first folder it cannot write, it prints one message and the container
+exits with status 73:
+
+```text
+Print Handy: cannot start: /data/state is not writable by the container user (uid 1000, gid 1000).
+  On the host this is the folder mapped to /data/state (Compose: inside ${PRINT_HANDY_DATA:-./data}; Unraid: inside the Appdata Storage path).
+  Fix it on the host, then start the container again:
+    Docker Compose:  sudo chown -R 1000:1000 ./data   (your PRINT_HANDY_DATA folder, and PRINT_HANDY_SPOOLMAN_DATA if set)
+    Unraid:          chown -R 1000:1000 /mnt/user/appdata/print-handy   (your Appdata Storage path)
+    Rootless Podman: podman unshare chown -R 1000:1000 <your data folder>
+  ...
+```
+
+Run the line for your install on the host, then start again
+(`docker compose up -d`, or restart the container in Unraid). With Compose,
+the `print-handy-init` service already sets the owner of each top-level data
+folder on every `up`, so when the message still appears there the cause is
+one of these:
+
+- A folder inside the data folder is owned by another user, for example
+  after running the container as root once. The `chown -R` above fixes it.
+- The data folder is on an NFS or SMB share that ignores or refuses
+  ownership changes (NFS `root_squash`, a CIFS mount with fixed `uid=`).
+  Set the owner to 1000:1000 on the server, or mount the share with
+  `uid=1000,gid=1000`.
+- The folder is mapped read-only (`:ro`). Map it read-write.
+- The container runs as a user other than 1000. Compose maps only the
+  folders inside `/data`, so a message naming `/data` itself on Compose means
+  the `user:` line was changed; the image expects 1000:1000.
+
+If `print-handy-init` itself cannot create or chown a folder, it fails with
+one line naming that folder and the same `chown` command
+(`Print Handy init: cannot create /data/state or make it owned by 1000:1000`),
+and the application does not start. `docker compose logs print-handy-init`
+shows it.
+
 ### When a print stops
 
 On a Klipper shutdown, a printer error state or a cancel, Print Handy reads the
@@ -534,7 +592,7 @@ printer warnings recorded before the stop".
 
 ## Unraid DockerMan
 
-Print Handy is available in **Unraid Community Apps**. The installation uses the project's Unraid template (`docker/unraid/print-handy.xml`). One entry runs all required processes; leave PostArgs empty. Its only Extra Parameters value is `--shm-size=256m`, the same shared-memory size Compose sets: Docker's 64 MB default is too small for OrcaSlicer's slicing. The template carries only the install-time surface: the Web UI port (8088), a single **Appdata** path mounting all of `/data`, a **Timelapse Archive** path whose default folder sits inside Appdata, the bundled/external Spoolman choice, the container timezone and the GPU passthrough entries: both paths under `/mnt/user/appdata/print-handy` by default, the Appdata path owned by UID/GID 1000:1000.
+Use `docker/unraid/print-handy.xml` (the Community Applications listing is the same install surface). One entry runs all required processes; leave PostArgs empty. Its only Extra Parameters value is `--shm-size=256m`, the same shared-memory size Compose sets: Docker's 64 MB default is too small for OrcaSlicer's slicing. The template carries only the install-time surface: the Web UI port (8088), a single **Appdata** path mounting all of `/data`, a **Timelapse Archive** path whose default folder sits inside Appdata, the bundled/external Spoolman choice, the container timezone and the GPU passthrough entries: both paths under `/mnt/user/appdata/print-handy` by default, the Appdata path owned by UID/GID 1000:1000.
 
 Before the first start, make the Appdata folder writable by the container user (UID 1000; Unraid creates folders as 99:100). In the Unraid terminal:
 
@@ -664,7 +722,7 @@ Every `docker-publish` dispatch starts with the **release surfaces gate** (the `
 
 The manual `.github/workflows/docker-publish.yml` covers the whole matrix in one dispatch. Its build job runs both legs (amd64 and arm64) on native runners; each leg builds its platform image, runs the headless slicer smoke and the offline runtime acceptance for that arch. Only with `publish=true`, and only after that leg's acceptance succeeded, does a leg log in and push: by digest only, never by tag. A final manifest job (publication dispatches only, after every leg succeeded) combines the pushed digests with `docker buildx imagetools create` into the tag `:VERSION` and, when the guard says this is the highest released version, `:latest`, and writes the manifest digests to the step summary and the uploaded evidence. With `publish=false` (candidate mode) every leg still builds and must pass acceptance, and nothing is pushed and no manifest is created. Candidate inputs for the next release are `version=<next MAJOR.MINOR.PATCH>`, `publish=false`. Preserve every existing tag (2.1.1, 2.1.2, 2.1.3 era tags included); never overwrite or republish an existing tag.
 
-A publication dispatch (`publish=true`) is also checked by the **publish ref guard** (`scripts/check_publish_ref.py`, the first step of the same `surfaces-gate` job), which fails the run before anything is built unless all of these hold: the dispatched ref is the release tag (select the tag, not a branch, in the "Use workflow from" box, and the tag name must equal the version); the tagged commit is reachable from `main`; the `CI` workflow concluded successfully on that exact commit; and the `Release checklist: X.Y.Z` issue exists and is closed. Candidate runs (`publish=false`) are never blocked and work from any ref. `:latest` moves only when the version being published is the highest released version (a plain `MAJOR.MINOR.PATCH` tag reachable from `main`); publishing an older patch updates only `:VERSION`.
+A publication dispatch (`publish=true`) is also checked by the **publish ref guard** (`scripts/check_publish_ref.py`, the first step of the same `surfaces-gate` job), which fails the run before anything is built unless all of these hold: the dispatched ref is the release tag (select the tag, not a branch, in the "Use workflow from" box, and the tag name must equal the version); the tagged commit is reachable from `main`; the `CI` workflow concluded successfully on that exact commit (any event counts; pushes to `main` keep only the newest queued CI run, so when the tagged commit's own run was replaced by a later merge, dispatch `CI` on the tag first); and the `Release checklist: X.Y.Z` issue exists and is closed. Candidate runs (`publish=false`) are never blocked and work from any ref. `:latest` moves only when the version being published is the highest released version (a plain `MAJOR.MINOR.PATCH` tag reachable from `main`); publishing an older patch updates only `:VERSION`.
 
 **Repairing `:latest`.** If `:latest` ever points at the wrong image, run the manual **Retag latest to an existing release** workflow (`.github/workflows/retag-latest.yml`): Actions tab, pick that workflow, "Run workflow", enter the version `:latest` should point at (for example `2.2.7`), or `gh workflow run retag-latest.yml -f version=2.2.7`. It builds nothing: it copies the existing `:VERSION` manifest to `:latest` by digest with `docker buildx imagetools create`, checks the result has the same digest, and refuses a version whose git tag is missing or not reachable from `main`, or that has no published GitHub release (a draft or prerelease does not count). It never runs on its own. After every release, the post-release surfaces issue carries the command that confirms `:latest` and the newest release share one digest.
 
