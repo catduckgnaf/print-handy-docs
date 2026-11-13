@@ -107,10 +107,10 @@ All settings support `PRINT_HANDY__SECTION__KEY` process-environment overrides, 
 The actual token still comes from the variable named by `token_env` (default `DISCORD_BOT_TOKEN`),
 not a `discord.token` field. `PRINT_HANDY_CONFIG` selects an explicit configuration file.
 See [settings and optional LLM/logging fields](./standalone.md#settings) and
-[configuration load order](./configuration-yaml.md). Leave `llm.chat_url` empty for command-list replies
-with no LLM, or, when `[llm]` is set up for `/print-design`, set `discord.chat_llm_enabled` to `false`
-(or `PRINT_HANDY__DISCORD__CHAT_LLM_ENABLED=false`) to run Discord with no chat LLM while design keeps
-its endpoint; `bot check` names the switch on its llm row. See
+[configuration load order](./configuration-yaml.md). Discord runs with no chat LLM by default, even when
+`[llm]` is set up for `/print-design`: `discord.chat_llm_enabled` is `false` unless you set it, because AI is
+for designing models. Set it to `true` (or `PRINT_HANDY__DISCORD__CHAT_LLM_ENABLED=true`) if you want the
+model to answer stray chat; `bot check` names the switch on its llm row. See
 [Running Discord with no chat LLM](./standalone.md#running-discord-with-no-chat-llm). Separate from that chat LLM, the print-started post carries the
 one-line **roast** from the local roast corpus, no LLM needed: `vision.roast_enabled` is
 on by default, and setting it `false` (or
@@ -133,6 +133,12 @@ channel per user per hour ("You are not on this bot's allowed list."). Approvals
 `discord.approval_user_id` names who may approve prints (one ID or several) and each is always allowed to act, but setting one never
 restricts anyone else, and widening intake does not widen the live camera's own allowlist
 (`approval_user_id` plus `allowed_user_ids`, as before).
+
+A question's buttons belong to the person it was asked of. Another member pressing them gets "That question
+was asked of someone else. Nothing changed."; an approval user may answer anyone's question. With no approval
+user configured, nobody but the person asked can answer it. The one exception is the Stop button on a slice or
+start in progress: anyone allowed may press it. Telegram, Matrix and web chat follow the same rule (#1146; on
+Discord since 2.3.2).
 
 ### Yolo
 
