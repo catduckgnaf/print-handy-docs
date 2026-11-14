@@ -47,6 +47,7 @@ export default defineConfig({
         items: [
           { text: 'Docker', link: '/docker' },
           { text: 'Unraid Community Apps', link: '/docker#unraid-dockerman' },
+          { text: 'Home Assistant OS app', link: 'https://github.com/catduckgnaf/print-handy-haos-addon' },
           { text: 'Native installation (standalone bot)', link: '/install' },
           { text: 'More Than One Printer', link: '/multi-instance' },
         ],

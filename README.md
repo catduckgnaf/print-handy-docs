@@ -6,7 +6,7 @@ The documentation site for [Print Handy](https://github.com/catduckgnaf/print-ha
 
 This repository contains only the documentation site. It is not the Print Handy project itself.
 
-Install via Docker, **Unraid Community Apps**, or the native standalone bot. Native installation and the standalone bot are one path, not two products. The site highlights [model design](https://catduckgnaf.github.io/print-handy-docs/design), Pasta Wrapped, Pasta Cam, Spoolman-backed printer management and guarded beta firmware/component updates.
+Install via Docker, **Unraid Community Apps**, a [**Home Assistant OS app**](https://github.com/catduckgnaf/print-handy-haos-addon), or the native standalone bot. Native installation and the standalone bot are one path, not two products. The site highlights [model design](https://catduckgnaf.github.io/print-handy-docs/design), Pasta Wrapped, Pasta Cam, Spoolman-backed printer management and guarded beta firmware/component updates.
 
 <!-- Local edits to README.md, BRANDING.md, docs/README.md, Docker and Web UI guides are editorial and intentionally not copied from an unreleased Print Handy ref. Pages navigation and homepage copy live only in this repository. -->
 

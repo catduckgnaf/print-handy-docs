@@ -213,6 +213,7 @@ Get status and printer management in the local Web UI, or use the chat you alrea
 ## Start here
 
 - Available in **Unraid Community Apps**. [Installation details](/docker#unraid-dockerman).
+- Available as a **Home Assistant OS app**: add `https://github.com/catduckgnaf/print-handy-haos-addon` under **Settings > Apps > App store > Repositories** and install **Print Handy**. It runs the same image and updates itself with each release. [App details](https://github.com/catduckgnaf/print-handy-haos-addon).
 - [Docker](/docker): one container with the bot, printer listeners, slicer and bundled Spoolman.
 - [Native installation](/install): the same standalone bot installed with Python and systemd, without Docker.
 - [Design a model](/design): optional AI design in chat, preview and revise before guided slicing.
