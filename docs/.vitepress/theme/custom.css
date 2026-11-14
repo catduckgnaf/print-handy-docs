@@ -139,10 +139,23 @@ html {
 
 .ph-slide {
   display: grid;
-  grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+  grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
   gap: 32px;
   align-items: center;
   margin: 0 0 44px;
+}
+
+/* The story text reads on the left, the screenshot on the right (the
+   wider 11fr column); the DOM keeps image-first order, which is what
+   the single-column layout below stacks. */
+.ph-slide-media {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.ph-slide-caption {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .ph-gallery--js .ph-slide {
@@ -240,6 +253,14 @@ html {
   .ph-gallery--js .ph-slide--active {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+  }
+
+  /* Single column stacks in DOM order: screenshot first, then its
+     story text — the wide-screen side swap does not apply here. */
+  .ph-slide-media,
+  .ph-slide-caption {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .ph-slide {
