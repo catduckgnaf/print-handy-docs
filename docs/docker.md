@@ -120,7 +120,7 @@ Run a second *instance* instead only when you want hard process isolation betwee
 
 ## Camera watch (visual_watch)
 
-While a print runs, the listener checks the printer camera at layer 2, layer 5 and then periodically. A listener that restarts mid-print skips a first-layer check it is already past (layer 2 after layer 4, layer 5 after layer 10) and keeps the periodic schedule, and it continues the print's timelapse capture instead of starting a second one, also when it comes back to a paused print. A vision model classifies each frame; spaghetti, a detached part, an empty bed, a stalled print, an uncertain frame or a failed check posts the camera photo to Discord with **Pause**, **It's fine** and **Stop asking for this print** buttons. **Stop asking for this print** mutes camera posts for that print only. The next print asks again, even if it has the same filename. The optional camera watchdog posts alerts after checks. Its alert-only behavior is separate from `visual_watch.auto_pause_early`, an opt-in that can pause the printer after two suspicious early-layer checks; it is off by default. Do not describe the whole feature as incapable of affecting printer state. Camera classification is not a guarantee of safe unattended printing.
+While a print runs, the listener checks the printer camera at layer 2, layer 5 and then periodically. A listener that restarts mid-print skips a first-layer check it is already past (layer 2 after layer 4, layer 5 after layer 10) and keeps the periodic schedule, and it continues the print's timelapse capture instead of starting a second one, also when it comes back to a paused print. A vision model classifies each frame; spaghetti, a detached part, an empty bed, a stalled print, an uncertain frame or a failed check posts the camera photo to Discord with **Pause**, **It's fine** and **Stop asking for this print** buttons. With the local failure detector, a weak detection (below its failure threshold) is only noted the first time, posted as a low-confidence possible failure without a ping once two checks in a row see it, and treated as spaghetti after three (see docs/SETTINGS.md, Local failure detector). **Stop asking for this print** mutes camera posts for that print only. The next print asks again, even if it has the same filename. The optional camera watchdog posts alerts after checks. Its alert-only behavior is separate from `visual_watch.auto_pause_early`, an opt-in that can pause the printer after two suspicious early-layer checks; it is off by default. Do not describe the whole feature as incapable of affecting printer state. Camera classification is not a guarantee of safe unattended printing.
 
 Which printers have the in-print watch:
 
@@ -158,6 +158,8 @@ Sensitivity also sets the periodic check interval (30, 20, 15, 10 or 7.5 minutes
 ## Web UI (optional)
 
 Print Handy has a Web UI: a simple status page plus a picker configuration page that reads and writes the same YAML settings file as everything else. It is on by default in the code settings and in the container: `config/docker.yaml` and Compose both serve it on `0.0.0.0:8088`, and the Unraid template maps that port. Set `PRINT_HANDY__WEBUI__ENABLED=false` to turn it off; then the supervisor starts no extra child and nothing listens. The supervisor decides from the resolved configuration (`python3 -m print_handy.webui_gate`, mirroring the listener gate), and the container healthcheck reports a Web UI row that is skipped while disabled.
+
+**Claim it at first start.** The container serves the Web UI with no login until one is set, printer controls included. After the first start, open port 8088 and finish the walkthrough's **Login** step: set a password, or record that you mean to leave it open on a trusted network. To have it claimed before anyone can reach it, set `WEBUI_ACCESS_TOKEN` in `.env` (or the masked Unraid template variable) before the first start. See [First boot and logins](./webui.md#first-boot-and-logins).
 
 Enable it in the mounted YAML (`webui` in `config/docker.yaml`), in TOML (`[webui]` in `config/docker.toml`), or with Compose/`.env` variables. Compose carries them as environment entries; the Unraid template carries only the port mapping, so on Unraid they are set in the mounted config file:
 
@@ -342,12 +344,12 @@ As of 2.2.2 the shipped Docker default model is `klipper.generic` (it was `flash
 
 ## Pinning the image
 
-`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.3.1` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
+`:latest`, `:develop` and `:nightly` are moving tags. A pull of any of them can replace a working container with a different build, including one that was never released. A release tag such as `:2.3.2` is safer, but it is immutable only until someone republishes it. The thing that does not move is the multi-arch index digest.
 
-The current release is 2.3.1. Its index digest, read anonymously from GHCR on 2026-11-12, is the same digest `:latest` pointed at that day:
+The current release is 2.3.2. Its index digest, read anonymously from GHCR on 2026-11-13, is the same digest `:latest` pointed at that day:
 
 ```text
-ghcr.io/catduckgnaf/print-handy@sha256:87c8047007cd004d22222fae7fb66b882c569da21d231d23187679f37fa1a467
+ghcr.io/catduckgnaf/print-handy@sha256:2e34364549370cb502af3327f67a7ccbb388acd8126e02b4b14c8100b573387b
 ```
 
 That digest is the amd64 and arm64 index, not one architecture's image. The Unraid templates (in-repo and Community Applications) never pin it: their `Repository` is `:latest`, so Unraid offers each release as a normal container update. Pin on your own install only if you want to hold a version. Compose has no default image: set `PRINT_HANDY_IMAGE` in `.env` to the same digest.
@@ -355,7 +357,7 @@ That digest is the amd64 and arm64 index, not one architecture's image. The Unra
 Confirm a tag still points where you think before you pin it:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.3.1
+docker buildx imagetools inspect ghcr.io/catduckgnaf/print-handy:2.3.2
 ```
 
 The `Digest:` line of the index is the value to pin. The per-architecture lines under `Manifests:` are not.
@@ -368,7 +370,7 @@ This is an optional, per-install edit for holding a version. The templates stay 
 2. Change only the `Repository` element, from the moving tag to the digest:
 
 ```xml
-<Repository>ghcr.io/catduckgnaf/print-handy@sha256:87c8047007cd004d22222fae7fb66b882c569da21d231d23187679f37fa1a467</Repository>
+<Repository>ghcr.io/catduckgnaf/print-handy@sha256:2e34364549370cb502af3327f67a7ccbb388acd8126e02b4b14c8100b573387b</Repository>
 ```
 
 3. Leave every path, port, variable and `ExtraParams` value as it is. In particular do not drop a volume: every appdata path and any extra mounts (account tokens, timelapse archive) stay.
@@ -473,13 +475,19 @@ To adopt the new name (optional, any time before that removal):
 
 ### Rollback
 
-Rollback is the previous digest with the same data paths. Nothing in Print Handy downgrades the Spoolman database, so roll back only to an image that can read the data the current one wrote. The previous release, 2.3.0, is:
+Rollback is the previous digest with the same data paths. Nothing in Print Handy downgrades the Spoolman database, so roll back only to an image that can read the data the current one wrote. The previous release, 2.3.1, is:
+
+```text
+ghcr.io/catduckgnaf/print-handy@sha256:87c8047007cd004d22222fae7fb66b882c569da21d231d23187679f37fa1a467
+```
+
+2.3.2 changes no existing data format. What it adds to the state folder (the web chat feed file, the owning printer beside each start claim, and the spool weight noted at launch) is simply unused by 2.3.1; 2.3.1 skips the extra start-claim entry. Single-slot prints are again unguarded against a runaway Moonraker charge under 2.3.1. The 2.3.2 release lifecycle gate downgrades to 2.3.1 with the data intact. The release before that, 2.3.0, is:
 
 ```text
 ghcr.io/catduckgnaf/print-handy@sha256:2d0bc32a8d84bdfd288b4a01114bd86cacb101ba49ec91b8abb8ce1f1178beb9
 ```
 
-2.3.1 changes no existing data format. What it adds to the state folder (the multicolor usage ledger, and new fields in the runout question and finish-post bookkeeping) is simply unused by 2.3.0, and multicolor prints are not charged to Spoolman again under 2.3.0. The release before that, 2.2.9, is:
+2.3.1 changes no existing data format. What it adds to the state folder (the multicolor usage ledger, and new fields in the runout question and finish-post bookkeeping) is simply unused by 2.3.0, and multicolor prints are not charged to Spoolman again under 2.3.0. The release before those, 2.2.9, is:
 
 ```text
 ghcr.io/catduckgnaf/print-handy@sha256:e7358f7363af4b67e46cc26c78289c24926f6e7ddb54558eb81a6a31858da9ec
