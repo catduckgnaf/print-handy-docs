@@ -106,7 +106,7 @@
 }
 
 /* Fun, modern scrolling: smooth anchor scrolls, feature cards that lift
-   on hover, and homepage story steps that reveal as they scroll into
+   on hover, and the homepage gallery that reveals as it scrolls into
    view. The reveal uses the CSS scroll-driven animations API where the
    browser supports it; everywhere else the steps are simply visible.
    Reduced-motion preferences turn all of it off. */
@@ -122,31 +122,136 @@ html {
   transform: translateY(-4px);
 }
 
-/* Story steps: screenshot small on the left, the detailed commentary
-   on the right; one column on narrow screens. */
-.story-step {
+/* "See it in action" gallery: one Discord example at a time, flipped
+   through with the Previous / Next buttons (or dots, or arrow keys).
+   Before the theme's JavaScript mounts — and with JavaScript off —
+   every slide stays listed, the way the page read before the gallery;
+   the .ph-gallery--js class is what collapses it to one slide. */
+.ph-gallery {
+  margin: 44px 0;
+}
+
+.ph-gallery:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
+.ph-slide {
   display: grid;
   grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
   gap: 32px;
   align-items: center;
-  margin: 44px 0;
+  margin: 0 0 44px;
 }
 
-.story-step img {
+.ph-gallery--js .ph-slide {
+  display: none;
+  margin: 0;
+}
+
+.ph-gallery--js .ph-slide--active {
+  display: grid;
+  animation: gallery-in 0.3s ease;
+}
+
+@keyframes gallery-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ph-slide img {
   border-radius: 16px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   width: 100%;
 }
 
-.story-text p {
+.ph-slide-caption p {
   margin: 0 0 12px;
 }
 
+.ph-gallery-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.ph-gallery-button {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.ph-gallery-button:hover {
+  border-color: var(--vp-c-brand-1);
+}
+
+.ph-gallery-button:focus-visible,
+.ph-gallery-dot:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+}
+
+.ph-gallery-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ph-gallery-dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--vp-c-divider);
+  cursor: pointer;
+}
+
+.ph-gallery-dot--active {
+  background: var(--vp-c-brand-1);
+}
+
+.ph-gallery-position {
+  min-width: 3.5em;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+
 @media (max-width: 768px) {
-  .story-step {
+  .ph-slide,
+  .ph-gallery--js .ph-slide--active {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    margin: 32px 0;
+  }
+
+  .ph-slide {
+    margin: 0 0 32px;
+  }
+
+  .ph-gallery--js .ph-slide {
+    margin: 0;
+  }
+
+  .ph-gallery-dots {
+    display: none;
   }
 }
 
@@ -178,7 +283,7 @@ html {
 
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .story-step {
+    .ph-gallery {
       animation: story-reveal linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 55%;
@@ -209,6 +314,14 @@ html {
   }
 
   .VPFeatures .item {
+    transition: none;
+  }
+
+  .ph-gallery--js .ph-slide--active {
+    animation: none;
+  }
+
+  .ph-gallery-button {
     transition: none;
   }
 }
