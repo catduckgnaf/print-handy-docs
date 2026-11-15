@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Print Handy',
   description: 'Design a model with optional AI, or send a model link or file. Print Handy handles slicing and approval, printer management and Pasta Wrapped. Local first, your way, with or without an LLM.',
   base: '/print-handy-docs/',
+  // catduck's call: the whole site is dark, for every visitor — the
+  // Discord examples are dark, so there is no light theme or toggle.
+  appearance: 'force-dark',
   cleanUrls: true,
   lastUpdated: true,
   head: [
