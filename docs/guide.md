@@ -20,7 +20,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 - [Multi-part projects](./projects.md): upload several STL/3MF files together, trace project/plate JSON IDs and print the next plate.
 - [Settings](./settings.md) · [YAML configuration](./configuration-yaml.md): settings, precedence and environment overrides.
 - [Slicer warnings](./slicer-warnings.md): OrcaSlicer warnings after slicing.
-- [Firmware updates](./firmware-update.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md).
+- [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md).
 - [Design a part](./design.md): optional AI-assisted OpenSCAD design. Review the result before the usual approval flow.
 - [Edit a prepared model](./editing.md): confirmed edit operations and limits. OrcaSlicer warning behavior is covered in [Slicer warnings](./slicer-warnings.md).
 - [Printer profiles](./printer-profiles.md): supported delivery methods and verification limits.
@@ -32,7 +32,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 Start with [Printer support](./printer-support.md) for what support means, connection paths and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
 
-- [ZMod](./zmod.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
+- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
 - [Bambu Lab](./bambu-lab.md) · [Bambu connectivity details](https://github.com/catduckgnaf/print-handy/blob/main/docs/BAMBU-CONNECTIVITY.md) · [Prusa](./prusa.md) · [Elegoo](./elegoo.md)
 - [Creality](./creality.md) · [Qidi](./qidi.md) · [Sovol](./sovol.md)
 - [Anycubic](./anycubic.md) · [Snapmaker](./snapmaker.md) · [OctoPrint and Marlin](./octoprint-marlin.md)
@@ -60,6 +60,7 @@ Start with [Printer support](./printer-support.md) for what support means, conne
 - [Branding guide](./branding.md) · [Release notes guide](./release-notes-guide.md) · [Release checklist](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-CHECKLIST.md) · [Release notes template](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-NOTES-TEMPLATE.md) · [Internal release history](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/INTERNAL_RELEASE_NOTES.md)
 - Historical and internal records, not setup instructions, live in [`history/`](https://github.com/catduckgnaf/print-handy/tree/main/docs/history). They are kept as written, so older ones still use the project's earlier names (Print Buddy, the Hermes plugin) and describe setups that no longer exist; for anything current, follow the guides above. The records: [operator live-proof protocol](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/PHASE2-LIVE-PROOFS.md), [rename migration](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RENAME-MIGRATION.md), [Docker acceptance](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCKER-117-ACCEPTANCE.md), [Docker progress](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCKER-117-PROGRESS.md), [timelapse record](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/ISSUE-126-TIMELAPSE.md), [hardcoded values inventory](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/hardcoded-inventory.md), [CAD evaluation](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/KICAD-EVALUATION.md), [reuse map](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/REUSE-MAP.md), [multi-printer design](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/MULTI-PRINTER-DESIGN.md), the [AD5X implementation contract](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/AD5X-CONTRACT.md) and the [recovered testing lane](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RECOVERY-TESTING.md).
 - [3MF remap inventory](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/3MF-REMAP-INVENTORY.md): which 3MF references a conversion remaps, and where each one lives.
+- [Documentation audit, 15 November 2026](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCUMENTATION-AUDIT-2026-11-15.md): the README and printer-guide accuracy pass behind 2.3.4.
 - [3MF conversion evidence matrix](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/3MF-CONVERSION-EVIDENCE.md): the criterion-by-criterion evidence for the foreign 3MF conversion work.
 - [Geometry soundness audit](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/GEOMETRY_AUDIT.md): what the sizing, rotation, mirroring, bed fit and support checks cover, and their known limits.
 

@@ -43,6 +43,9 @@ export default defineConfig({
           { text: 'Writing release notes', link: '/release-notes-guide' },
           { text: 'Printer accessories', link: '/accessories' },
           { text: 'Print Handy status voice', link: '/status-voice' },
+          { text: 'The firmware feed', link: '/firmware-feed' },
+          { text: 'Forge-X printers', link: '/forgex' },
+          { text: 'OpenCreator printers', link: '/opencreator' },
         ],
       },
       {

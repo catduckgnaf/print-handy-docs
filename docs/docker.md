@@ -1,5 +1,17 @@
 # Docker
 
+Docker is one of Print Handy's three main installation paths, alongside [Unraid](https://github.com/catduckgnaf/catduck-unraid-templates) and the [Home Assistant add-on](./home-assistant-os.md). This page is the deep dive. For the short copy-and-paste setup, start at [Get started in the README](https://github.com/catduckgnaf/print-handy/blob/main/README.md#get-started).
+
+## First time here?
+
+1. Download the release's `docker-compose.yml` and `.env.example` using the [README quickstart](https://github.com/catduckgnaf/print-handy/blob/main/README.md#get-started).
+2. Set `PRINT_HANDY_IMAGE` to the digest you intend to run ([how to find the digest](#pinning-the-image)). A release tag is a reference, not proof of a fixed digest.
+3. Select the exact printer **model and firmware** in [Printer support](./printer-support.md). Moonraker settings are only for printers that actually speak Moonraker.
+4. Configure [Discord](./discord-bot-setup.md), [Telegram](./telegram-bot-setup.md), [Matrix](./matrix-bot-setup.md) or the local [Web UI](./webui.md).
+5. Start Compose, claim the Web UI login and run `docker compose exec combined python3 -m print_handy.doctor`. The doctor checks services and configuration; your first print is still a real hardware test.
+
+Want Unraid instead? The [Community Apps template repo](https://github.com/catduckgnaf/catduck-unraid-templates) gets you there without hand-editing Compose. No extra installation species required.
+
 ## Run a print
 
 1. Share a model link or upload an STL/3MF through your configured chat platform.
@@ -513,17 +525,17 @@ volume:
 - **Where:** `/data/state/logs/print-handy-YYYY-MM-DD.log`, one file per day
   (local time, `TZ`), on the `/data/state` mount. On Unraid that is
   `/mnt/user/appdata/print-handy/state/logs/`; with Compose,
-  `${PRINT_HANDY_DATA:-./data}/state/logs/`. (On an install that has not
-  renamed its pre-2.2.5 `hermes` folder yet, the same files are in that
-  folder. The container reads them through `/data/state`.) Every process in the container
-  (bot, listeners, workers) appends to the same daily file. Stdout logging is
-  unchanged, so `docker logs` still works.
+  `${PRINT_HANDY_DATA:-./data}/state/logs/`. The Docker image enables this
+  path by default; explicit `[logging] file` configuration overrides it.
 - **Retention:** 14 days by default (today counts as one), set with
   `logging.retention_days` or `PRINT_HANDY__LOGGING__RETENTION_DAYS`. Older
   dated files are deleted when a process starts and at each midnight.
 - **Turning it off or moving it:** `PRINT_HANDY__LOGGING__FILE` names the base
-  path (`/data/state/logs/print-handy.log` in the image); set it empty for
-  stdout only. See `logging.*` in [SETTINGS.md](./settings.md).
+  path by default; an explicit `[logging] file` takes precedence over this
+  environment default. Set it empty for stderr only, or set a different path
+  to move the file. Logging is best effort: if the volume cannot be written,
+  the application warns to stderr and continues. See `logging.*` in
+  [SETTINGS.md](./settings.md).
 - **Reading it:** `tail -f /mnt/user/appdata/print-handy/state/logs/print-handy-$(date +%F).log`,
   or `grep -h "stop reason" /mnt/user/appdata/print-handy/state/logs/*.log`.
   `print-handy diagnostics` includes the newest file's tail.
@@ -734,7 +746,7 @@ The `.github/workflows/develop.yml` workflow publishes the develop channel and k
 
 The scheduled `.github/workflows/upstream-watch.yml` (Mondays 13:37 UTC, or on dispatch) watches the manual pins Renovate cannot see. It runs `scripts/check_upstream_releases.py`, which reads the single OrcaSlicer pin from `docker/orca-prebuilt.sh`, the go2rtc version from `docker/go2rtc-prebuilt.sh` and the `BAMBU_REF` / `SPOOLMAN_REF` commit pins from the Dockerfile, compares them with each upstream's GitHub releases, and opens one deduplicated `upstream-watch` issue per newer release, closing it again once the pin catches up. For the two commit pins the comparison is against the commit each release tag points to, never the release's publish date: a release published hours after its own tag commit is not newer than a pin sitting on that commit. For OrcaSlicer the newest of upstream's finals and prereleases counts against the pin, because the shipped build is itself a prerelease. Notification only: it never edits a pin and never opens a bump PR, because a bump (OrcaSlicer's per-architecture SHA256 values and vendor-profile identities above all) is more than a version edit.
 
-Every `docker-publish` dispatch starts with the **release surfaces gate** (the `surfaces-gate` job, running `scripts/check_release_surfaces.py`). The gate checks that the README and the `print_handy` package version match the version being published, that the README's links resolve, and that the GitHub Pages site (`catduckgnaf/print-handy-docs`) has no drift against `docs/` at the release ref: drift as defined by the docs repo's own Docs sync check (`scripts/check-sync.sh` there), including removed pages. In candidate mode (`publish=false`) stale surfaces are only reported as warnings. With `publish=true` the gate fails the run before any image is built or pushed until the surfaces are current. The remedy is the **Docs auto-sync** workflow in `print-handy-docs` (`gh workflow run docs-auto-sync.yml --repo catduckgnaf/print-handy-docs -f ref=<version>`): it opens a sync PR there; merge it, then re-dispatch the publish. Publishing the GitHub release also triggers that sync automatically via `repository_dispatch` when the `DOCS_SYNC_TOKEN` secret is configured on this repo (a token with contents + pull-requests write on `print-handy-docs`); without it, the post-release surfaces checklist issue records the skip and the manual link. The gate applies to version releases only: nightly is a separate workflow (`.github/workflows/nightly.yml`) and is never gated.
+Every `docker-publish` dispatch starts with the **release surfaces gate** (the `surfaces-gate` job, running `scripts/check_release_surfaces.py`). The gate checks that the README and the `print_handy` package version match the version being published, that the README's links resolve, and that the GitHub Pages site (`catduckgnaf/print-handy-docs`) has no drift against `docs/` at the release ref: drift as defined by the docs repo's own Docs sync check (`scripts/check-sync.sh` there), including removed pages. In candidate mode (`publish=false`) stale surfaces are only reported as warnings. With `publish=true` the gate fails the run before any image is built or pushed until the surfaces are current. The remedy is the **Docs auto-sync** workflow in `print-handy-docs` (`gh workflow run docs-auto-sync.yml --repo catduckgnaf/print-handy-docs -f ref=<version>`): it opens a sync PR there; merge it, then re-dispatch the publish. Publishing the GitHub release also triggers that sync automatically via `repository_dispatch` when the `DOCS_SYNC_TOKEN` secret is configured on this repo (a token with contents + pull-requests write on `print-handy-docs`); without it, the post-release surfaces checklist issue records the skip and the manual link. The same workflow also sends the Home Assistant OS app (`catduckgnaf/print-handy-haos-addon`) a `print-handy-release` dispatch, using the `HAOS_APP_DISPATCH_TOKEN` secret (a fine-grained token with Contents read and write on that repository), or `DOCS_SYNC_TOKEN` when that token also reaches it. The app then publishes its update within minutes. Without either, the app still finds the release on its own scheduled check, and the checklist issue records which happened. The gate applies to version releases only: nightly is a separate workflow (`.github/workflows/nightly.yml`) and is never gated.
 
 The manual `.github/workflows/docker-publish.yml` covers the whole matrix in one dispatch. Its build job runs both legs (amd64 and arm64) on native runners; each leg builds its platform image, runs the headless slicer smoke and the offline runtime acceptance for that arch. Only with `publish=true`, and only after that leg's acceptance succeeded, does a leg log in and push: by digest only, never by tag. A final manifest job (publication dispatches only, after every leg succeeded) combines the pushed digests with `docker buildx imagetools create` into the tag `:VERSION` and, when the guard says this is the highest released version, `:latest`, and writes the manifest digests to the step summary and the uploaded evidence. With `publish=false` (candidate mode) every leg still builds and must pass acceptance, and nothing is pushed and no manifest is created. Candidate inputs for the next release are `version=<next MAJOR.MINOR.PATCH>`, `publish=false`. Preserve every existing tag (2.1.1, 2.1.2, 2.1.3 era tags included); never overwrite or republish an existing tag.
 
