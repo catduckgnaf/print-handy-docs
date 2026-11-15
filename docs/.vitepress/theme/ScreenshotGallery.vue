@@ -147,7 +147,9 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="ph-gallery-controls">
+    <!-- Controls exist only once JavaScript runs; without it every slide
+         is listed and there is nothing for them to do. -->
+    <div v-if="enhanced" class="ph-gallery-controls">
       <button type="button" class="ph-gallery-button" aria-label="Previous example" @click="previous">
         ← Previous
       </button>
