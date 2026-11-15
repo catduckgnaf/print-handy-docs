@@ -356,6 +356,28 @@ it loudly).
 container it restarts on its own. The row is a warning, not a doctor
 failure; the container healthcheck owns failing on a dead listener.
 
+### Marker codes: supervisor, crash, Web UI, and gate CLIs
+
+#### PH_SUPERVISOR_TRANSIENT {#ph-supervisor-transient}
+
+**What failed:** a supervised listener exited, is being restarted, or its restart state could not be recorded. The supervisor continues its existing restart policy; this marker does not change print behavior.
+**What to do:** check the named listener's log and the diagnostics bundle for its exit status and restart budget. No printer action is taken automatically by this marker.
+
+#### PH_CRASH_PROGRAMMING {#ph-crash-programming}
+
+**What failed:** Print Handy recorded an unhandled process exception. The record includes a redacted traceback and context when available.
+**What to do:** attach the locally generated diagnostics bundle to a report. Nothing is uploaded automatically.
+
+#### PH_GATE_CONFIGURATION {#ph-gate-configuration}
+
+**What failed:** a startup or health gate could not resolve Print Handy configuration and therefore could not make its start decision.
+**What to do:** correct the named configuration issue and rerun the relevant gate or `python3 -m print_handy.doctor`. Optional components and filament status are not converted into hard print blocks by this marker.
+
+#### PH_WEBUI_CONFIGURATION {#ph-webui-configuration}
+
+**What failed:** the Web UI could not resolve its configuration or bind its configured server endpoint.
+**What to do:** follow the configuration error, then check `[webui]` settings and the configured host and port. The Web UI failure does not stop unrelated print processes.
+
 ### Signature codes: parse
 
 A signature code means `failure_report.py` recognized the failure's
@@ -656,7 +678,10 @@ has a temporary **debug log mode** for reproducing a problem:
   written to a dedicated, size-bounded capture file
   (`debug-capture.log`, rotating, in the state folder), delimited by
   `DEBUG_SESSION_START` / `DEBUG_SESSION_END` markers carrying the
-  session id. The capture exists whether or not a `[logging] file` is
+  session id. Session windows are read across the rotation backups
+  too (`.2`, then `.1`, then the main file, in chronological order),
+  so a session that rotated out of the main file is still exported
+  whole instead of reported as missing. The capture exists whether or not a `[logging] file` is
   configured, so a Docker (stderr-only) install still produces logs.
   **Listener processes are covered**: the mode is shared state, not a
   per-process switch; every process applies it when it configures
@@ -753,6 +778,8 @@ critical below) attaches the bundle automatically.
 
 What the bundle carries beyond versions and the redacted config summary:
 
+- **Job correlation**: the ten most recent valid, opaque job correlation IDs from local archive metadata. They contain no source path or credential and are included only in an explicitly generated bundle.
+
 - **Runtime status**: the image tag and commit SHA
   (`PRINT_HANDY_IMAGE_TAG` / `PRINT_HANDY_IMAGE_SHA`; the release,
   develop and nightly images have both stamped in by the workflow that
@@ -771,6 +798,29 @@ What the bundle carries beyond versions and the redacted config summary:
   heartbeat that stays fresh while the lag grows past 90 seconds reads
   as "listener event loop blocked or stalled" in the healthcheck, which
   is what the watchdog and the outage notices key on.
+- **Crashes**: every process that configures logging with a role (the
+  bot, the listeners, the heavy worker, the monitor worker, the Web UI
+  and the live-activity server) installs crash capture for that role.
+  An unhandled exception (an operator interrupt or a clean exit is
+  not one) is written as a structured record to
+  `state/crashes/<role>.json` (one file per role, newest crash wins):
+  the time, the role, the Print Handy version, the pid, the exception
+  type, the message and a bounded traceback, redacted with
+  `logs.redact` before it is written, plus the log context bound at
+  crash time. Nothing is uploaded anywhere: the records leave the
+  machine only inside a bundle the operator attaches, and the bundle
+  carries them under a **Crashes** section, sanitized a second time
+  by the export pass on the way out. The bundle header also states
+  whether debug mode is on, its runtime section shows each
+  supervisor record's last listener exit status when one was recorded,
+  and a heartbeat file that exists but cannot be read is reported as
+  unreadable rather than as missing.
+- **Log tail fallback**: with no `[logging]` file configured, the
+  bundle's log section falls back to the debug capture file's tail
+  (labeled as such) when a capture exists: the Docker/stderr installs
+  that have no log file are exactly the ones the capture covers. With
+  neither, the bundle names the remaining routes: attach the container
+  or systemd log, or run a debug session and build the bundle again.
 - **Printer logs** (`--printer-logs`): for each Moonraker printer, the
   console history from Moonraker's `gcode_store`, plus the `klippy.log`,
   ZMod console and screen logs the printer serves. Each source's clock
