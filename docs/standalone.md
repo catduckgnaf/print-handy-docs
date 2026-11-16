@@ -159,7 +159,12 @@ Required environment: `PRINT_HANDY__BOT__MODE=standalone`, `DISCORD_BOT_TOKEN`, 
   (`/spool new <brand, material, color, grams>`, `/spool change <slot> <spool#>`, `/spool list`,
   `/spool sync`) still work in one shot. `/spool weight <spool#> <grams left>` corrects a spool's
   remaining weight in Spoolman in one step (for example `/spool weight 19 930`); a value above the
-  spool's starting weight is refused, and "fix the spool weight" suggests it. Plain requests work too, with no LLM configured: "add new
+  spool's starting weight is refused, and "fix the spool weight" suggests it. The Web UI slot actions are in chat too (#1515):
+  `/spool shelve <slot>` puts a slot's spool back on the shelf, `/spool rename <spool#> <name>`
+  gives one spool its own name (other spools of the same filament keep theirs; an empty name
+  clears it), and `/spool archive <spool#>` / `/spool unarchive <spool#>` archive a spool or bring
+  it back. Archiving a loaded spool is refused until it is off the printer. Chat lists show a
+  spool's own name when it has one. Plain requests work too, with no LLM configured: "add new
   filament", "add a new spool", "we need to add new filament" and "change / swap / replace the
   filament" start the same guided flow; ordinary discussion about filament does not.
 * `/print-spools` answers what is loaded, where, and how much is left: a loaded-only,
@@ -179,7 +184,7 @@ Required environment: `PRINT_HANDY__BOT__MODE=standalone`, `DISCORD_BOT_TOKEN`, 
   the continuation summary show the updated remaining time and filament as copies finish, and no post
   quotes one copy's finish as the whole job's, sequential finishes depend on the bed-clear pauses
   between copies.
-* Slash commands: `/print-next`, `/print-stop`, `/print-resume`, `/print-again`, `/print-reboot`,
+* Slash commands: `/print-next`, `/print-stop`, `/print-pause`, `/print-resume`, `/print-again`, `/print-reboot`,
   `/print-coldpull`, `/print-bed-down` (prepare to clean: separate bed and nozzle, asks first, never homes or heats), `/nozzle`, `/print-maintenance`, `/print-colors`, `/spool`, `/print-spools`, `/print-lookup`, `/print-troubleshoot`,
   `/print-macros` (Moonraker printers only; lists the macros the printer defines, and `run <name>` runs one behind a confirmation),
   `/print-firmware` (firmware version report on Moonraker printers; `update <component>` applies one component update behind a confirmation on ZMod and vanilla Klipper printers only; `guide zmod` / `guide stock` walk through the manual AD5X updates; other families get their manual update guidance),

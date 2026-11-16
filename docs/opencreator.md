@@ -29,14 +29,11 @@ release ships, and upstream Kalico) and source-verified the contracts
 tranche 1 had to leave open: the dispatcher's synthesized print start,
 the `creator5_toolchanger` status shape, and the AFC lane objects and
 their map. Those contracts are graded source-verified below. No
-OpenCreator printer has printed through Print Handy, and nobody on
-this side has an OpenCreator install to query, so nothing here is
-hardware verified yet. The one contract source could not settle is
-the `lane_data` record shape the firmware publishes for OrcaSlicer
-filament sync (the sources disagree three ways; see the research
-issue). Treat these profiles the way the ZMod profiles were treated
-before their first live checks: the slicing path is tested offline,
-the printer path is not yet proven.
+OpenCreator printer has printed through Print Handy. Read-only captures
+shared on #1490 establish selected Moonraker component and record shapes,
+not successful print or calibration execution. Nothing here is hardware
+verified as a complete workflow yet. Treat these profiles as source-backed,
+offline-tested contracts; a hardware pass remains tracked by #1490.
 
 ## Public alpha: upstream's own warning
 
@@ -58,6 +55,36 @@ above, never a silent extension of the ZMod Creator profiles.
 | OpenCreator CFW | Kalico, Moonraker and a web UI on the printer's own computer; the installer replaces the stock host software end to end and flashes all four MCU boards | The edition these profiles target |
 | OpenCreator for SBC | The same stack on a Raspberry Pi or other SBC, with the printer's boards tunneled over one USB gadget cable; Moonraker's address is the SBC's address | Same profiles; point `services.moonraker_url` at the SBC |
 | OpenCreator Legacy | The stock FlashForge stack plus comfort mods; upstream says it no longer gets meaningful updates or Discord support | Not an OpenCreator target here: a Legacy printer is a stock printer for Print Handy's purposes, and there is no stock Creator profile yet |
+
+## Guided setup, camera and SBC edition
+
+Select the Creator base or Pro model for the installed firmware. Once the
+Moonraker address is entered, setup reads `/printer/objects/list`. An exclusive
+`creator5_toolchanger` or `zmod_color` match offers the corresponding firmware
+model while preserving base versus Pro. It changes nothing without confirmation
+(answer key `use_detected_firmware`, with `p2_` etc. for additional printers).
+Missing or conflicting evidence never selects a firmware. Readiness remains the
+final mismatch guard. Print Handy does the slicing; an upstream slicer plugin
+is not needed.
+
+When a camera is requested, setup reads `/server/webcams/list` and offers the
+first enabled camera with a snapshot URL. Relative paths resolve against the
+web host, not the conventional Moonraker API port 7125. An explicit custom
+web port is retained. A missing snapshot is not replaced with a guessed stream.
+The offered URL can be edited; discovery is not a hardware camera test.
+
+On SBC installs, set `services.moonraker_url` to the SBC, not the printer.
+The update component may be `opencreator-updater`. Reboot and service control
+use the SBC's normal Moonraker provider; do not infer printer-board control
+from that. When the printer is airgapped its built-in camera is unavailable:
+use a camera exposed by the SBC. Rendered timelapse files live on the SBC.
+Print Handy uses Moonraker's `timelapse` file root rather than assuming a local
+output folder. A real rendered-video retrieval on both editions remains
+unverified; no timelapse path change or successful capture is claimed.
+
+Calibration menus name OpenCreator's own macros and remain guide only until
+hardware validation. PID, MPC, mesh, input shaper and screws never fall back
+to generic Klipper execution. See [CALIBRATION.md](./calibration.md).
 
 ## Install boundaries
 
@@ -219,6 +246,11 @@ The check reads object names only, never unverified inner fields, and
 absence of evidence is treated as absence: a plain missing-object
 failure keeps its usual wording.
 
+`print-handy doctor` shows the same check on a `creator firmware` row
+for every Creator model: which firmware the printer runs, and the
+mismatch message when it is not the configured one. An unreachable
+printer shows as unknown.
+
 ## Persistent feature switches (the Misc switches)
 
 OpenCreator keeps 13 virtual Misc switches that persist across
@@ -332,36 +364,159 @@ AFC is part of readiness as well: the `AFC` object must be reporting
 with no error state, and no toolhead's `AFC_extruder` object may
 report a mount sensor error.
 
-The printer's AFC lane map is part of readiness too. Inside
-`C5_PRINT_START`, the firmware remaps the file's tool numbering
-through that map. Each toolhead is configured as an `AFC_extruder
-extruder0` to `extruder3` section mapped to a `T` command, and the
-firmware reports the live map on the matching lane objects, `AFC_lane
-extruder0` to `extruder3` (the `AFC_extruder` status itself carries no
-map, so Print Handy reads the lane objects). The shipped map is the
-identity, extruderN to `T<N>`. Print Handy's Creator contract is
-identity-only, so a non-identity map refuses the start with a message
-naming the actual mapping, rather than letting the printer remap a
-job invisibly. Print Handy never sends `SET_MAP` itself: on this
-firmware that command swaps two lanes' maps instead of assigning one,
-and changing the map is the operator's decision at the printer.
+Readiness also refuses the start, naming the cause, when:
 
-### AFC lanes and the tool map
+- **A used tool has no filament.** Each tool the job uses is checked at
+  the toolhead the printer's map sends it to, from that toolhead's
+  `AFC_extruder` `tool_start_status`. The printer's own start checks
+  only the first tool, so a second tool with no filament would
+  otherwise stop the print on runout. Unknown presence is a refusal.
+- **An interrupted print is held for power-loss recovery.** While
+  `power_loss_recovery` reports `recovery_available`, the printer holds
+  the bed hot for that print. Resume or discard it at the printer
+  first. A sample with no `power_loss_recovery` object fails closed.
+- **The Pro's chamber heater is not reporting.** The Pro's start line
+  can carry a chamber target, so `heater_generic chamber_heater` must
+  answer. The base model has no chamber heater and is never asked.
 
-Print Handy parses the AFC lane list and each reported `AFC_lane` record,
-including the lane's tool map. It also reads per-tool filament records from
-`lane_data` in either publisher shape: generic AFC's `T<n>` keys, which
-include `extruder_index`, and `creator5_filament_sync`'s `c5_tool<n>` keys.
-AFC tool records are accepted only when the key and `extruder_index` agree.
+When a print is cancelled during print start, the cancel report names
+the printer's reason from its console: a tool with no filament, no
+build plate, or a cancel while preparing. The exact console text is
+source-verified, not checked on a printer.
 
-The identity map (`extruder0` to `T0`, through `extruder3` to `T3`) is
-accepted; a remapped or unreported lane is refused by readiness, with the
-lane and actual mapping named. Print Handy does not send `SET_MAP`.
+During a pause, the resume guard reads the filament sensor of the
+toolhead that is printing (`extruderN_tool_start`, with
+`extruder_tool_start` for tool 0), so an idle tool's empty sensor does
+not block a resume.
 
-Writing spool data to the printer is not done yet. Live `lane_data`
-ownership is unverified, and Cartrigger's capture is pending. Outbound
-`SET_SPOOL_ID` wiring, the setting that enables it, and announcing a
-mid-print remap are later work.
+The printer's AFC tool map is part of readiness too. Inside
+`C5_PRINT_START`, the firmware sends each tool in the file to the lane
+mapped to it, so the map, not the tool number, decides which toolhead
+prints a tool. Print Handy follows the printer's map (decided on #1490,
+2026-11-15). A printer whose map has been changed from the shipped one
+is accepted, and Print Handy works out which toolhead each tool in the
+file will really print on.
+
+The map is read from the lanes the `AFC` object lists in `lanes`. Lane
+names belong to the printer: a standalone install names them
+`extruder0` to `extruder3`, and a printer with an ACE unit names them
+`lane1` to `lane4` and has no `AFC_lane extruderN` object at all (live
+capture, shared on #1490). Each listed lane is read under `AFC_lane
+&lt;name>` or `AFC_stepper &lt;name>`, whichever answers. Its `map` is the
+tool it prints and its `extruder` is the toolhead it feeds. The
+`AFC_extruder` status carries no map and is not used for this.
+
+A map is refused only when it cannot be resolved, and the message names
+the cause:
+
+- AFC does not list its lanes, or a listed lane is not reporting.
+- A lane does not report its map, or which toolhead it feeds.
+- A tool is mapped to more than one lane, or to none.
+- Two tools land on the same toolhead.
+- AFC's multiple tool mapping is on.
+
+Print Handy never sends `SET_MAP` itself: on this firmware that command
+swaps two lanes' maps instead of assigning one, and changing the map is
+the operator's decision at the printer.
+
+An ACE unit is not supported yet. When AFC reports one, readiness
+refuses the start and says so by name, even if the lanes behind it
+resolve.
+
+Not hardware verified: the swapped-map and ACE cases are checked
+against the firmware source and one live capture, not against a print.
+The capture did not include the per-lane objects of an ACE printer.
+
+### Runout and power-loss alerts (not hardware verified)
+
+The listener reads Moonraker action-prompt responses, not echoed commands.
+A complete runout prompt is mirrored with exactly its offered Load and continue
+(`_OC_RUNOUT_LOAD_CONTINUE`) and loaded-tool switch choices
+(`_OC_RUNOUT_SWITCH TO=n`). Missing, incomplete or unrecognized choices do not
+create a guessed action. Discord, Telegram, Matrix and web chat use the same
+alert action path.
+
+On connection and when Klipper becomes ready, `power_loss_recovery` is queried.
+When `recovery_available` is true, one alert per observed interruption names the
+file, file-byte progress if valid, and the reported `holding_bed` state. Resume
+corresponds to `RECOVER_PRINT`; Discard corresponds to
+`CLEAR_POWER_LOSS_RECOVERY`. Neither command is sent automatically.
+
+**All of these buttons currently refuse to send commands, even after a press.**
+Runout switching and power-loss recovery are not hardware verified. Use the
+printer's own controls after checking the printer. There is no enable setting
+or bypass. This tranche adds the alert foundation, not authorization for live
+recovery. Consequently, resumed-print record correlation is not claimed here:
+no recovery action or new print number is created by these alerts. A hardware
+pass and original-record correlation remain tracked by #1490 before enabling
+commands. Dedupe lasts for this listener's lifetime; restarting it may repeat
+an available recovery notice.
+
+### Backup lanes (display only; not hardware verified)
+
+Before start, Print Handy displays each selected tool's AFC lane (all four
+when the selection does not name tools) and
+`runout_lane`, and includes that summary in Job Details. Lane names come from
+AFC's resolved tool map, never from an assumed `extruderN` name. Missing or
+unreadable targets, a self-target, unconfirmed filament (`load` is false or
+unknown), unknown material, and differing material families produce advisory
+warnings. These warnings never become readiness blockers. Material metadata
+alone is not evidence of filament presence. Print Handy never sends
+`SET_RUNOUT` or `SET_MAP` from this surface.
+
+### Firmware updates
+
+Print Handy reports OpenCreator's update state and never installs an
+update (decided on #1490, 2026-11-15). `/print-firmware update` is
+refused for every component on these two models, before anything is
+read from the printer, with the reason and the manual path.
+
+- **Why:** OpenCreator is alpha firmware on a Klipper fork, and one of
+  its updates can flash the printer's boards.
+- **How to update:** Software Update in Fluidd or Mainsail, while the
+  printer is idle. Expect a Klipper restart afterwards.
+- **What the report says:** `/print-firmware` lists every component the
+  printer's Update Manager reports. OpenCreator publishes no version
+  number, so its entry (`opencreator`, or `opencreator-updater` on the
+  SBC edition) is shown as the git describe string Moonraker reports
+  and how many commits behind it is. When Moonraker marks the checkout
+  not valid, or does not say how far behind it is, the report says the
+  state is unknown. It never says up to date on a guess.
+- **Release notices:** a new OpenCreator release is announced in chat
+  through the firmware feed, with no Update button (see
+  [FIRMWARE-UPDATE.md](./firmware-update.md)).
+
+The report wording is checked against a live update status shared on
+#1490. The SBC edition's entry name comes from the project's
+documentation and is not checked against a capture.
+
+### AFC lanes and filament records
+
+Print Handy reads per-tool filament records from `lane_data` in either
+publisher shape: generic AFC's `T<n>` keys, which include
+`extruder_index`, and `creator5_filament_sync`'s `c5_tool<n>` keys. On
+a remapped printer a `T<n>` record's `extruder_index` differs from its
+key. The record is kept under its tool, with the toolhead beside it. A
+`T<n>` record with no usable `extruder_index` is left out.
+
+**Charging follows the map.** When Print Handy counts filament (the
+printer's own Moonraker Spoolman link is off, see #1536), a print that
+uses two or more tools is charged per toolhead. At launch Print Handy
+reads the printer's AFC map and records which toolhead each file tool
+prints on. When the print ends, each toolhead's spool is charged its
+tool's grams from the file. If the map cannot be read at launch, no
+per-toolhead charge is recorded and the launch says so. A one-tool
+print keeps Moonraker's active spool. When the printer is the
+accounting authority, Print Handy charges nothing.
+
+Print Handy never sends AFC's `SET_SPOOL_ID`, `SET_MATERIAL` or
+`SET_COLOR`. Spools are bound at the printer. In AFC's source
+(`extras/AFC_spool.py`), `SET_SPOOL_ID` also moves Moonraker's active
+spool, which is the printer's accounting under #1536; `SET_MATERIAL`
+takes one word; and `SET_COLOR` takes a hex code and cannot clear a
+color. Writing `lane_data` is not done either: live ownership is
+unverified, and Cartrigger's capture is pending. Announcing a
+mid-print remap is later work.
 
 Guidance from Cartrigger (OpenCreator) on #1490.
 
@@ -385,7 +540,7 @@ Scoped out of the first tranche (#1490 names the follow-up tranches):
   flow calibration) as Print Handy job questions: a later tranche.
   (Tranche 2 delivered the synthesized-start modeling in verification,
   readiness and the active tool on the `creator5_toolchanger`
-  contract, the AFC identity lane-map refusal, and the manufacturer
+  contract, following the printer's AFC tool map, and the manufacturer
   ceilings recorded above.)
 - Converging Print Handy's spool records with the firmware's own
   `lane_data` publishing. Tranche 3 delivered the reading half: the
@@ -423,8 +578,17 @@ Scoped out of the first tranche (#1490 names the follow-up tranches):
   an optional `temperature_ace` sensor type. So when ACE ships, it
   rides the existing AFC and sensor paths rather than a new surface;
   Print Handy adds no ACE code until it is in a release.
-- Driving OpenCreator updates or alerting on its versions: upstream
-  has no version tracking yet, so there is no reliable version to read.
+- Runtime `/print-macros run` is disabled for OpenCreator models. The
+  macro names in the descriptive registry are backed by source
+  configuration only; no live hardware validation exists. Macro
+  listing is read-only, and source presence is never permission to
+  dispatch a command.
+- Firmware update, calibration, first-setup, load/unload, tool-change,
+  dryer, ACE, or other motion/heat commands are intentionally absent
+  from the OpenCreator registry. G-code upload of 3MF and the upstream
+  Send plugin are also out of scope.
+- Installing OpenCreator updates. Print Handy reports them and never
+  applies them (see Firmware updates below).
 - The OpenCreator Send OrcaSlicer plugin: Print Handy's slice guard
   protects `slicing_pipeline_plugin` by design, so a downloaded project
   cannot inject it, and Print Handy does not adopt it. It remains
