@@ -6,25 +6,38 @@ Every printer Print Handy knows has a **profile**: its bed size, its
 nozzles, how it takes filament, and how a finished slice gets to it.
 You pick yours with one setting; the **model key**, written
 `vendor.printer`, and Print Handy handles the rest. Find your brand,
-follow its guide, and you are done here; everything below the picker
-is reference for people who want the details.
+then your model, then the firmware it runs; the connection comes
+last, as a detail. Follow the guide for your route, and you are done
+here; everything below the picker is reference for people who want
+the details.
 
-| Brand | Printers | How Print Handy reaches it | Start with |
-| --- | --- | --- | --- |
-| Flashforge (ZMod) | AD5X, AD5M, AD5M Pro, Creator 5, Creator 5 Pro | Moonraker on your network | [AD5X best practices](./device-ad5x.md) · [ZMod](./zmod.md) |
-| Flashforge (stock) | AD5X on factory firmware | The printer's own LAN interface | [Stock Flashforge](./flashforge-stock.md) |
-| Flashforge (OpenCreator) | Creator 5, Creator 5 Pro on OpenCreator firmware | Moonraker on your network | [OpenCreator](./opencreator.md) |
-| Flashforge (Forge-X) | AD5M, AD5M Pro on Forge-X firmware | Moonraker on your network | [Forge-X](./forgex.md) |
-| Bambu Lab | A1, A1 mini, P1P, P1S, P2S, X1, X1C, X1E, H2S, A2L, plus the dual-nozzle H2D, H2D Pro, X2D and H2C | Slices locally; print starts are opt-in over the LAN | [Bambu Lab](./bambu-lab.md) |
-| Prusa | MK4S, Core One, XL, MINI+ | PrusaLink on your network | [Prusa](./prusa.md) |
-| Elegoo | Neptune 4, 4 Pro, 4 Plus, 4 Max; Centauri Carbon | Moonraker, or SDCP for the Centauri | [Elegoo](./elegoo.md) |
-| Creality | Ender-3 V3, V3 KE, V3 Plus, K1, K1C, K1 Max | Moonraker | [Creality](./creality.md) |
-| Qidi | Q1 Pro, X-Plus 3, X-Plus 4, X-Max 3, X-Smart 3 | Moonraker | [Qidi](./qidi.md) |
-| Anycubic | Kobra 2, 2 Neo, 2 Pro, 2 Plus, 2 Max | Moonraker on community firmware; Marlin models through OctoPrint | [Anycubic](./anycubic.md) |
-| Sovol | The Klipper line (SV06, SV08 and friends), Marlin models through OctoPrint | Moonraker or OctoPrint | [Sovol](./sovol.md) |
-| Snapmaker | U1 | Moonraker | [Snapmaker](./snapmaker.md) |
-| Any other Klipper printer | Yours not listed? `klipper.generic` is the catch-all | Moonraker | [Printer support](./printer-support.md) |
-| Marlin printers | Ender-3 family and other Marlin machines | OctoPrint | [OctoPrint / Marlin](./octoprint-marlin.md) |
+| Brand | Models, then firmware and connection |
+| --- | --- |
+| FlashForge | AD5X<br>**Stock factory firmware** over Factory LAN HTTP API: [Stock FlashForge](./flashforge-stock.md) |
+| FlashForge | AD5X, AD5M, AD5M Pro, Creator 5, Creator 5 Pro<br>**ZMod** over Moonraker: [ZMod](./zmod.md) · [AD5X best practices](./device-ad5x.md) |
+| FlashForge | AD5M, AD5M Pro<br>**Forge-X (1.4.2 beta)** over Moonraker: [Forge-X](./forgex.md) |
+| FlashForge | Creator 5, Creator 5 Pro<br>**OpenCreator** over Kalico / Moonraker: [OpenCreator](./opencreator.md) |
+| Creality | Ender-3 V3, Ender-3 V3 KE, Ender-3 V3 Plus, K1, K1C, K1 Max<br>**Model-specific Klipper firmware** over Moonraker: [Creality](./creality.md) |
+| Creality | Ender-3, Ender-3 Pro, Ender-3 V2, Ender-3 V3 SE<br>**Stock Marlin** over OctoPrint: [OctoPrint / Marlin](./octoprint-marlin.md) |
+| Qidi | Q1 Pro, X-Plus 3, X-Plus 4, X-Max 3, X-Smart 3<br>**Model-specific Klipper firmware** over Moonraker: [Qidi](./qidi.md) |
+| Snapmaker | U1<br>**Klipper-based firmware** over Moonraker: [Snapmaker](./snapmaker.md) |
+| Bambu Lab | A1, A1 mini, A2L, P1P, P1S, P2S, X1, X1C, X1E, H2S, H2D, H2D Pro, H2C, X2D<br>**Bambu Lab firmware** over Bambu Lab LAN (slices locally; print starts are opt-in): [Bambu Lab](./bambu-lab.md) |
+| Prusa | MK4S, CORE One, XL, MINI+<br>**Prusa firmware** over PrusaLink: [Prusa](./prusa.md) |
+| Elegoo | Neptune 4, Neptune 4 Pro, Neptune 4 Plus, Neptune 4 Max<br>**Klipper-based firmware** over Moonraker: [Elegoo](./elegoo.md) |
+| Elegoo | Centauri Carbon<br>**Elegoo SDCP firmware** over SDCP: [Elegoo](./elegoo.md) |
+| Anycubic | Kobra 2, Kobra 2 Neo, Kobra 2 Pro, Kobra 2 Plus, Kobra 2 Max<br>**Community Klipper firmware** over Moonraker: [Anycubic](./anycubic.md) |
+| Anycubic | Chiron, i3 Mega S, Kobra, Kobra Max, Kobra Neo, Kobra Plus, 4Max Pro 2, Vyper<br>**Stock Marlin** over OctoPrint: [OctoPrint / Marlin](./octoprint-marlin.md) |
+| Sovol | SV01, SV01 Pro, SV02, SV03, SV04, SV05, SV06, SV06 Plus<br>**Sovol Klipper firmware** over Moonraker: [Sovol](./sovol.md) |
+| Sovol | SV01, SV01 Pro, SV02, SV03, SV04, SV05, SV06, SV06 Plus<br>**Stock Marlin** over OctoPrint: [Sovol](./sovol.md) · [OctoPrint / Marlin](./octoprint-marlin.md) |
+| Sovol | SV06 ACE, SV06 Plus ACE, SV07, SV07 Plus, SV08, SV08 Max, Zero, M1D<br>**Sovol Klipper firmware** over Moonraker: [Sovol](./sovol.md) |
+| Any other Klipper printer | Yours not listed? `klipper.generic` is the catch-all<br>**Your Klipper install** over Moonraker: [Printer support](./printer-support.md) |
+| Any other Marlin printer | Yours not listed? `octoprint.marlin` is the catch-all<br>**Stock Marlin** over OctoPrint: [OctoPrint / Marlin](./octoprint-marlin.md) |
+
+FlashForge is one brand with four profiled firmware routes: stock,
+ZMod, Forge-X and OpenCreator. **Reforge**, an independent Creator 5
+firmware, has no dedicated Print Handy profile yet; it is not a fifth
+route. [Printer support](./printer-support.md) explains how to
+request it.
 
 One honest note: a profile existing means Print Handy knows the
 printer's shape and has tested the slicing path; it does not promise
@@ -32,6 +45,102 @@ someone has run that exact printer on real hardware. Each brand guide
 says what has actually been verified. The Bambu Lab H3C is the one
 known gap: it is recorded but not yet selectable, because the pinned
 OrcaSlicer carries no profiles for it.
+
+### Every model key
+
+Every registered model, with the firmware route and connection its
+profile uses. The same physical printer can hold several keys, one
+per firmware it can run; pick the key for the firmware installed on
+yours.
+
+- `anycubic.kobra2`: Anycubic Kobra 2, community Klipper firmware over Moonraker
+- `anycubic.kobra2max`: Anycubic Kobra 2 Max, community Klipper firmware over Moonraker
+- `anycubic.kobra2neo`: Anycubic Kobra 2 Neo, community Klipper firmware over Moonraker
+- `anycubic.kobra2plus`: Anycubic Kobra 2 Plus, community Klipper firmware over Moonraker
+- `anycubic.kobra2pro`: Anycubic Kobra 2 Pro, community Klipper firmware over Moonraker
+- `bambulab.a1`: Bambu Lab A1, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.a1mini`: Bambu Lab A1 mini, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.a2l`: Bambu Lab A2L, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.h2c`: Bambu Lab H2C, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.h2d`: Bambu Lab H2D, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.h2dpro`: Bambu Lab H2D Pro, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.h2s`: Bambu Lab H2S, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.p1p`: Bambu Lab P1P, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.p1s`: Bambu Lab P1S, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.p2s`: Bambu Lab P2S, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.x1`: Bambu Lab X1, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.x1c`: Bambu Lab X1 Carbon, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.x1e`: Bambu Lab X1E, Bambu Lab firmware over Bambu Lab LAN
+- `bambulab.x2d`: Bambu Lab X2D, Bambu Lab firmware over Bambu Lab LAN
+- `creality.ender3v3`: Creality Ender-3 V3, model-specific Klipper firmware over Moonraker
+- `creality.ender3v3ke`: Creality Ender-3 V3 KE, model-specific Klipper firmware over Moonraker
+- `creality.ender3v3plus`: Creality Ender-3 V3 Plus, model-specific Klipper firmware over Moonraker
+- `creality.k1`: Creality K1, model-specific Klipper firmware over Moonraker
+- `creality.k1c`: Creality K1C, model-specific Klipper firmware over Moonraker
+- `creality.k1max`: Creality K1 Max, model-specific Klipper firmware over Moonraker
+- `elegoo.neptune4`: Elegoo Neptune 4, klipper-based firmware over Moonraker
+- `elegoo.neptune4max`: Elegoo Neptune 4 Max, klipper-based firmware over Moonraker
+- `elegoo.neptune4plus`: Elegoo Neptune 4 Plus, klipper-based firmware over Moonraker
+- `elegoo.neptune4pro`: Elegoo Neptune 4 Pro, klipper-based firmware over Moonraker
+- `elegoo_sdcp.centauricarbon`: Elegoo Centauri Carbon, Elegoo SDCP firmware over SDCP
+- `flashforge.ad5m`: Flashforge AD5M, ZMod over Moonraker
+- `flashforge.ad5m_pro`: Flashforge AD5M Pro, ZMod over Moonraker
+- `flashforge.ad5x`: Flashforge AD5X, ZMod over Moonraker
+- `flashforge.creator5`: Flashforge Creator 5, ZMod over Moonraker
+- `flashforge.creator5_pro`: Flashforge Creator 5 Pro, ZMod over Moonraker
+- `flashforge_forgex.ad5m`: Flashforge AD5M, Forge-X (1.4.2 beta) over Moonraker
+- `flashforge_forgex.ad5m_pro`: Flashforge AD5M Pro, Forge-X (1.4.2 beta) over Moonraker
+- `flashforge_opencreator.creator5`: Flashforge Creator 5, OpenCreator over Moonraker
+- `flashforge_opencreator.creator5_pro`: Flashforge Creator 5 Pro, OpenCreator over Moonraker
+- `flashforge_stock.ad5x`: Flashforge Adventurer 5X, stock factory firmware over Factory LAN HTTP API
+- `klipper.generic`: Generic Klipper, your Klipper install over Moonraker
+- `octoprint.chiron`: Anycubic Chiron, stock Marlin over OctoPrint
+- `octoprint.ender3`: Creality Ender-3, stock Marlin over OctoPrint
+- `octoprint.ender3pro`: Creality Ender-3 Pro, stock Marlin over OctoPrint
+- `octoprint.ender3v2`: Creality Ender-3 V2, stock Marlin over OctoPrint
+- `octoprint.ender3v3se`: Creality Ender-3 V3 SE, stock Marlin over OctoPrint
+- `octoprint.i3megas`: Anycubic i3 Mega S, stock Marlin over OctoPrint
+- `octoprint.kobra`: Anycubic Kobra, stock Marlin over OctoPrint
+- `octoprint.kobramax`: Anycubic Kobra Max, stock Marlin over OctoPrint
+- `octoprint.kobraneo`: Anycubic Kobra Neo, stock Marlin over OctoPrint
+- `octoprint.kobraplus`: Anycubic Kobra Plus, stock Marlin over OctoPrint
+- `octoprint.marlin`: Marlin via OctoPrint, stock Marlin over OctoPrint
+- `octoprint.maxpro2`: Anycubic 4Max Pro 2, stock Marlin over OctoPrint
+- `octoprint.vyper`: Anycubic Vyper, stock Marlin over OctoPrint
+- `prusa.coreone`: Prusa CORE One, Prusa firmware over PrusaLink
+- `prusa.miniplus`: Prusa MINI+, Prusa firmware over PrusaLink
+- `prusa.mk4s`: Prusa MK4S, Prusa firmware over PrusaLink
+- `prusa.xl`: Prusa XL (5-tool), Prusa firmware over PrusaLink
+- `qidi.q1pro`: Qidi Q1 Pro, model-specific Klipper firmware over Moonraker
+- `qidi.xmax3`: Qidi X-Max 3, model-specific Klipper firmware over Moonraker
+- `qidi.xplus3`: Qidi X-Plus 3, model-specific Klipper firmware over Moonraker
+- `qidi.xplus4`: Qidi X-Plus 4, model-specific Klipper firmware over Moonraker
+- `qidi.xsmart3`: Qidi X-Smart 3, model-specific Klipper firmware over Moonraker
+- `snapmaker.u1`: Snapmaker U1, klipper-based firmware over Moonraker
+- `sovol.m1d`: Sovol M1D, Sovol Klipper firmware over Moonraker
+- `sovol.sv01`: Sovol SV01, Sovol Klipper firmware over Moonraker
+- `sovol.sv01_pro`: Sovol SV01 Pro, Sovol Klipper firmware over Moonraker
+- `sovol.sv02`: Sovol SV02, Sovol Klipper firmware over Moonraker
+- `sovol.sv03`: Sovol SV03, Sovol Klipper firmware over Moonraker
+- `sovol.sv04`: Sovol SV04, Sovol Klipper firmware over Moonraker
+- `sovol.sv05`: Sovol SV05, Sovol Klipper firmware over Moonraker
+- `sovol.sv06`: Sovol SV06, Sovol Klipper firmware over Moonraker
+- `sovol.sv06_ace`: Sovol SV06 ACE, Sovol Klipper firmware over Moonraker
+- `sovol.sv06_plus`: Sovol SV06 Plus, Sovol Klipper firmware over Moonraker
+- `sovol.sv06_plus_ace`: Sovol SV06 Plus ACE, Sovol Klipper firmware over Moonraker
+- `sovol.sv07`: Sovol SV07, Sovol Klipper firmware over Moonraker
+- `sovol.sv07_plus`: Sovol SV07 Plus, Sovol Klipper firmware over Moonraker
+- `sovol.sv08`: Sovol SV08, Sovol Klipper firmware over Moonraker
+- `sovol.sv08_max`: Sovol SV08 Max, Sovol Klipper firmware over Moonraker
+- `sovol.zero`: Sovol Zero, Sovol Klipper firmware over Moonraker
+- `sovol_marlin.sv01`: Sovol SV01, stock Marlin over OctoPrint
+- `sovol_marlin.sv01_pro`: Sovol SV01 Pro, stock Marlin over OctoPrint
+- `sovol_marlin.sv02`: Sovol SV02, stock Marlin over OctoPrint
+- `sovol_marlin.sv03`: Sovol SV03, stock Marlin over OctoPrint
+- `sovol_marlin.sv04`: Sovol SV04, stock Marlin over OctoPrint
+- `sovol_marlin.sv05`: Sovol SV05, stock Marlin over OctoPrint
+- `sovol_marlin.sv06`: Sovol SV06, stock Marlin over OctoPrint
+- `sovol_marlin.sv06_plus`: Sovol SV06 Plus, stock Marlin over OctoPrint
 
 ### In plain words
 

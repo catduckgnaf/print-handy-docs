@@ -19,6 +19,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 - [Project reference](./project-reference.md): commands and everyday workflows.
 - [Multi-part projects](./projects.md): upload several STL/3MF files together, trace project/plate JSON IDs and print the next plate.
 - [Settings](./settings.md) · [YAML configuration](./configuration-yaml.md): settings, precedence and environment overrides.
+- [Outside Spoolman](./outside-spoolman.md): run Print Handy against a Spoolman on another host, or the one a printer's Moonraker already points at, with one accounting authority per printer.
 - [Slicer warnings](./slicer-warnings.md): OrcaSlicer warnings after slicing.
 - [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md).
 - [Design a part](./design.md): optional AI-assisted OpenSCAD design. Review the result before the usual approval flow.
@@ -30,7 +31,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 ## Printer guides
 
-Start with [Printer support](./printer-support.md) for what support means, connection paths and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
+Start with [Find your printer](./printer-profiles.md#find-your-printer) to find your brand, model and firmware route, then [Printer support](./printer-support.md) for what support means and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
 
 - [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
 - [Bambu Lab](./bambu-lab.md) · [Bambu connectivity details](https://github.com/catduckgnaf/print-handy/blob/main/docs/BAMBU-CONNECTIVITY.md) · [Prusa](./prusa.md) · [Elegoo](./elegoo.md)

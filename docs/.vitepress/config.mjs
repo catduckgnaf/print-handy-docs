@@ -46,6 +46,7 @@ export default defineConfig({
           { text: 'The firmware feed', link: '/firmware-feed' },
           { text: 'Forge-X printers', link: '/forgex' },
           { text: 'OpenCreator printers', link: '/opencreator' },
+          { text: 'Working with an outside Spoolman', link: '/outside-spoolman' },
         ],
       },
       {
