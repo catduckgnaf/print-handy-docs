@@ -107,15 +107,7 @@ All settings support `PRINT_HANDY__SECTION__KEY` process-environment overrides, 
 The actual token still comes from the variable named by `token_env` (default `DISCORD_BOT_TOKEN`),
 not a `discord.token` field. `PRINT_HANDY_CONFIG` selects an explicit configuration file.
 See [settings and optional LLM/logging fields](./standalone.md#settings) and
-[configuration load order](./configuration-yaml.md). Discord runs with no chat LLM by default, even when
-`[llm]` is set up for `/print-design`: `discord.chat_llm_enabled` is `false` unless you set it, because AI is
-for designing models. Set it to `true` (or `PRINT_HANDY__DISCORD__CHAT_LLM_ENABLED=true`) if you want the
-model to answer stray chat; `bot check` names the switch on its llm row. See
-[Running Discord with no chat LLM](./standalone.md#running-discord-with-no-chat-llm). Separate from that chat LLM, the print-started post carries the
-one-line **roast** from the local roast corpus, no LLM needed: `vision.roast_enabled` is
-on by default, and setting it `false` (or
-`PRINT_HANDY__VISION__ROAST_ENABLED=false`) turns roasts off. See
-[The roast](./telegram-bot-setup.md#the-roast).
+[configuration load order](./configuration-yaml.md). Discord handles commands and print flows without a chat model; `[llm]` remains available for `/print-design`. Separately, the print-started post carries the one-line **roast** from the local roast corpus, no LLM needed: `vision.roast_enabled` is on by default, and setting it `false` (or `PRINT_HANDY__VISION__ROAST_ENABLED=false`) turns roasts off. See [The roast](./telegram-bot-setup.md#the-roast).
 
 ## Who can use the bot
 
@@ -412,6 +404,10 @@ Once the bot is running, this is the whole conversation for one print. Every ste
 **A spool added directly in Spoolman** gets a one-time prompt to load it.
 
 ![New spool prompt and load flow](https://raw.githubusercontent.com/catduckgnaf/print-handy/main/assets/screenshots/discord-07-new-spool.png)
+
+**Firmware updates.** Typing "update helixscreen" asks whether you meant `/print-firmware update helixscreen` before anything runs. That command then names the one component and version change and asks again. After the update, Print Handy re-reads the printer's firmware state and reports what it found, not what it hoped. See [FIRMWARE-UPDATE.md](./firmware-update.md).
+
+![Firmware update: the suggestion, the confirmation and the verified result](https://raw.githubusercontent.com/catduckgnaf/print-handy/main/assets/screenshots/discord-10-firmware-update.png)
 
 ## Recovery
 
