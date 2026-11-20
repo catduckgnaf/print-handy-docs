@@ -47,6 +47,11 @@ export default defineConfig({
           { text: 'Forge-X printers', link: '/forgex' },
           { text: 'OpenCreator printers', link: '/opencreator' },
           { text: 'Working with an outside Spoolman', link: '/outside-spoolman' },
+          { text: 'Print cost calculator', link: '/cost' },
+          { text: 'Cross-slicer 3MF', link: '/cross-slicer-3mf' },
+          { text: 'Reforge printers', link: '/reforge' },
+          { text: 'Print Handy 2.3.6 (Draft / Unreleased)', link: '/release-2.3.6' },
+          { text: 'Upstream Issue Watch.Md', link: '/upstream-issue-watch' },
         ],
       },
       {

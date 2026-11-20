@@ -7,6 +7,8 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 ## Start here
 
 - [Docker](./docker.md): the recommended install, with a copy-paste quickstart from nothing to a first print.
+- [Plain-language chat walkthroughs](https://github.com/catduckgnaf/print-handy/blob/main/README.md#talk-to-it-in-plain-words): everyday questions and the print flow; use the command reference when you want exact syntax.
+- [Draft 2.3.6 release notes](./release-2.3.6.md): story-first overview of changes merged to `main`; not a published release.
 - [Home Assistant OS app](./home-assistant-os.md): install the same image as a Home Assistant app that updates itself with each release.
 - [Standalone bot](./standalone.md): run without Docker. Choose [Discord](./discord-bot-setup.md), [Telegram](./telegram-bot-setup.md) or [Matrix](./matrix-bot-setup.md).
 - [Native installation](./install.md): install Print Handy without Docker (Python + systemd).
@@ -17,14 +19,15 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 ## Everyday printing
 
 - [Project reference](./project-reference.md): commands and everyday workflows.
-- [Multi-part projects](./projects.md): upload several STL/3MF files together, trace project/plate JSON IDs and print the next plate.
+- [Multi-part projects](./projects.md): collect parts, print and resume plate projects, and see the supported archived-source workflow.
 - [Settings](./settings.md) · [YAML configuration](./configuration-yaml.md): settings, precedence and environment overrides.
 - [Outside Spoolman](./outside-spoolman.md): run Print Handy against a Spoolman on another host, or the one a printer's Moonraker already points at, with one accounting authority per printer.
 - [Slicer warnings](./slicer-warnings.md): OrcaSlicer warnings after slicing.
-- [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md).
+- [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Upstream issue watch](./upstream-issue-watch.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md) · [Print cost calculator](./cost.md).
 - [Design a part](./design.md): optional AI-assisted OpenSCAD design. Review the result before the usual approval flow.
 - [Edit a prepared model](./editing.md): confirmed edit operations and limits. OrcaSlicer warning behavior is covered in [Slicer warnings](./slicer-warnings.md).
 - [Printer profiles](./printer-profiles.md): supported delivery methods and verification limits.
+- [Cross-slicer 3MF](./cross-slicer-3mf.md): importing Orca, Bambu, Prusa and Cura projects, what settings translation honestly carries, editable export, conversion reports and per-plate statistics.
 - [Status voice](./status-voice.md): the local, no-AI sarcastic quips on intake progress, the copy-count Easter eggs, and how roasts rotate.
 - [Printer accessories](./accessories.md): hardware fitted to one printer that did not ship with its model, including the Bondtech INDX tool changer for Klipper printers.
 - [More than one printer](./docker.md#more-than-one-printer): one instance serves a whole printer roster, declare every printer in one config file; the full roster reference is the [Printers list](./settings.md#printers-list). Running [separate instances](./multi-instance.md) stays available when you want hard process isolation.
@@ -33,7 +36,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 Start with [Find your printer](./printer-profiles.md#find-your-printer) to find your brand, model and firmware route, then [Printer support](./printer-support.md) for what support means and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
 
-- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
+- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Reforge](./reforge.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
 - [Bambu Lab](./bambu-lab.md) · [Bambu connectivity details](https://github.com/catduckgnaf/print-handy/blob/main/docs/BAMBU-CONNECTIVITY.md) · [Prusa](./prusa.md) · [Elegoo](./elegoo.md)
 - [Creality](./creality.md) · [Qidi](./qidi.md) · [Sovol](./sovol.md)
 - [Anycubic](./anycubic.md) · [Snapmaker](./snapmaker.md) · [OctoPrint and Marlin](./octoprint-marlin.md)
@@ -58,7 +61,7 @@ Start with [Find your printer](./printer-profiles.md#find-your-printer) to find 
 ## Contributors and history
 
 - [Contribution workflow](https://github.com/catduckgnaf/print-handy/blob/main/CONTRIBUTING.md) · [Pull request template](https://github.com/catduckgnaf/print-handy/blob/main/.github/PULL_REQUEST_TEMPLATE.md)
-- [Branding guide](./branding.md) · [Release notes guide](./release-notes-guide.md) · [Release checklist](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-CHECKLIST.md) · [Release notes template](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-NOTES-TEMPLATE.md) · [Internal release history](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/INTERNAL_RELEASE_NOTES.md)
+- [Branding guide](./branding.md) · [Release notes guide](./release-notes-guide.md) · [Draft 2.3.6 release notes](./release-2.3.6.md) · [Release checklist](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-CHECKLIST.md) · [Release notes template](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RELEASE-NOTES-TEMPLATE.md) · [Internal release history](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/INTERNAL_RELEASE_NOTES.md)
 - Historical and internal records, not setup instructions, live in [`history/`](https://github.com/catduckgnaf/print-handy/tree/main/docs/history). They are kept as written, so older ones still use the project's earlier names (Print Buddy, the Hermes plugin) and describe setups that no longer exist; for anything current, follow the guides above. The records: [operator live-proof protocol](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/PHASE2-LIVE-PROOFS.md), [rename migration](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RENAME-MIGRATION.md), [Docker acceptance](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCKER-117-ACCEPTANCE.md), [Docker progress](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCKER-117-PROGRESS.md), [timelapse record](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/ISSUE-126-TIMELAPSE.md), [hardcoded values inventory](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/hardcoded-inventory.md), [CAD evaluation](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/KICAD-EVALUATION.md), [reuse map](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/REUSE-MAP.md), [multi-printer design](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/MULTI-PRINTER-DESIGN.md), the [AD5X implementation contract](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/AD5X-CONTRACT.md) and the [recovered testing lane](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/RECOVERY-TESTING.md).
 - [3MF remap inventory](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/3MF-REMAP-INVENTORY.md): which 3MF references a conversion remaps, and where each one lives.
 - [Documentation audit, 15 November 2026](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCUMENTATION-AUDIT-2026-11-15.md): the README and printer-guide accuracy pass behind 2.3.4.
