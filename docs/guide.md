@@ -21,10 +21,11 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 - [Settings](./settings.md) · [YAML configuration](./configuration-yaml.md): settings, precedence and environment overrides.
 - [Outside Spoolman](./outside-spoolman.md): run Print Handy against a Spoolman on another host, or the one a printer's Moonraker already points at, with one accounting authority per printer.
 - [Slicer warnings](./slicer-warnings.md): OrcaSlicer warnings after slicing.
-- [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md).
+- [Firmware updates](./firmware-update.md) · [Firmware feed](./firmware-feed.md) · [Upstream issue watch](./upstream-issue-watch.md) · [Calibration](./calibration.md) · [Printer macros](./macros.md) · [Print cost calculator](./cost.md).
 - [Design a part](./design.md): optional AI-assisted OpenSCAD design. Review the result before the usual approval flow.
 - [Edit a prepared model](./editing.md): confirmed edit operations and limits. OrcaSlicer warning behavior is covered in [Slicer warnings](./slicer-warnings.md).
 - [Printer profiles](./printer-profiles.md): supported delivery methods and verification limits.
+- [Cross-slicer 3MF](./cross-slicer-3mf.md): importing Orca, Bambu, Prusa and Cura projects, what settings translation honestly carries, editable export, conversion reports and per-plate statistics.
 - [Status voice](./status-voice.md): the local, no-AI sarcastic quips on intake progress, the copy-count Easter eggs, and how roasts rotate.
 - [Printer accessories](./accessories.md): hardware fitted to one printer that did not ship with its model, including the Bondtech INDX tool changer for Klipper printers.
 - [More than one printer](./docker.md#more-than-one-printer): one instance serves a whole printer roster, declare every printer in one config file; the full roster reference is the [Printers list](./settings.md#printers-list). Running [separate instances](./multi-instance.md) stays available when you want hard process isolation.
@@ -33,7 +34,7 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 Start with [Find your printer](./printer-profiles.md#find-your-printer) to find your brand, model and firmware route, then [Printer support](./printer-support.md) for what support means and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
 
-- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
+- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Reforge](./reforge.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
 - [Bambu Lab](./bambu-lab.md) · [Bambu connectivity details](https://github.com/catduckgnaf/print-handy/blob/main/docs/BAMBU-CONNECTIVITY.md) · [Prusa](./prusa.md) · [Elegoo](./elegoo.md)
 - [Creality](./creality.md) · [Qidi](./qidi.md) · [Sovol](./sovol.md)
 - [Anycubic](./anycubic.md) · [Snapmaker](./snapmaker.md) · [OctoPrint and Marlin](./octoprint-marlin.md)

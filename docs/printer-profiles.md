@@ -17,6 +17,7 @@ the details.
 | FlashForge | AD5X, AD5M, AD5M Pro, Creator 5, Creator 5 Pro<br>**ZMod** over Moonraker: [ZMod](./zmod.md) · [AD5X best practices](./device-ad5x.md) |
 | FlashForge | AD5M, AD5M Pro<br>**Forge-X (1.4.2 beta)** over Moonraker: [Forge-X](./forgex.md) |
 | FlashForge | Creator 5, Creator 5 Pro<br>**OpenCreator** over Kalico / Moonraker: [OpenCreator](./opencreator.md) |
+| FlashForge | Creator 5, Creator 5 Pro<br>**Reforge** over Klipper / Moonraker: [Reforge](./reforge.md) |
 | Creality | Ender-3 V3, Ender-3 V3 KE, Ender-3 V3 Plus, K1, K1C, K1 Max<br>**Model-specific Klipper firmware** over Moonraker: [Creality](./creality.md) |
 | Creality | Ender-3, Ender-3 Pro, Ender-3 V2, Ender-3 V3 SE<br>**Stock Marlin** over OctoPrint: [OctoPrint / Marlin](./octoprint-marlin.md) |
 | Qidi | Q1 Pro, X-Plus 3, X-Plus 4, X-Max 3, X-Smart 3<br>**Model-specific Klipper firmware** over Moonraker: [Qidi](./qidi.md) |
@@ -33,11 +34,11 @@ the details.
 | Any other Klipper printer | Yours not listed? `klipper.generic` is the catch-all<br>**Your Klipper install** over Moonraker: [Printer support](./printer-support.md) |
 | Any other Marlin printer | Yours not listed? `octoprint.marlin` is the catch-all<br>**Stock Marlin** over OctoPrint: [OctoPrint / Marlin](./octoprint-marlin.md) |
 
-FlashForge is one brand with four profiled firmware routes: stock,
-ZMod, Forge-X and OpenCreator. **Reforge**, an independent Creator 5
-firmware, has no dedicated Print Handy profile yet; it is not a fifth
-route. [Printer support](./printer-support.md) explains how to
-request it.
+FlashForge is one brand with five profiled firmware routes: stock,
+ZMod, Forge-X, OpenCreator and Reforge. The three Creator 5 firmwares
+(ZMod, OpenCreator, Reforge) have separate, non-interchangeable
+profiles. Reforge's are built from its published config and are not
+hardware verified; see [Reforge](./reforge.md).
 
 One honest note: a profile existing means Print Handy knows the
 printer's shape and has tested the slicing path; it does not promise
@@ -92,6 +93,8 @@ yours.
 - `flashforge_forgex.ad5m_pro`: Flashforge AD5M Pro, Forge-X (1.4.2 beta) over Moonraker
 - `flashforge_opencreator.creator5`: Flashforge Creator 5, OpenCreator over Moonraker
 - `flashforge_opencreator.creator5_pro`: Flashforge Creator 5 Pro, OpenCreator over Moonraker
+- `flashforge_reforge.creator5`: Flashforge Creator 5, Reforge over Moonraker
+- `flashforge_reforge.creator5_pro`: Flashforge Creator 5 Pro, Reforge over Moonraker
 - `flashforge_stock.ad5x`: Flashforge Adventurer 5X, stock factory firmware over Factory LAN HTTP API
 - `klipper.generic`: Generic Klipper, your Klipper install over Moonraker
 - `octoprint.chiron`: Anycubic Chiron, stock Marlin over OctoPrint
@@ -470,7 +473,7 @@ A new vendor is a package with an `__init__.py` defining `VENDOR = VendorProfile
 
 ## After a slice
 
-The Discord flow is unchanged up to the slice: preview, colors, copies, then "Slice and print now (bed is clear)", "Slice and Download", "Scale the model" and "Cancel print request". "Scale the model" asks bigger or smaller, then 1%, 5% or 10%, and repeats the confirmation at the new size; a size that does not fit the bed is refused, and the bot offers the biggest size that does fit instead. The slice summary still shows per-plate artifacts, estimates and validation. A vendor without `printer` delivery (Bambu Lab) does not get the "Slice and print now" button.
+The Discord flow is unchanged up to the slice: preview, colors, copies, then "Slice and print now" (pressing it confirms the bed is clear), "Slice and Download", "Scale the model" and "Cancel print request". "Scale the model" asks bigger or smaller, then 1%, 5% or 10%, and repeats the confirmation at the new size; a size that does not fit the bed is refused, and the bot offers the biggest size that does fit instead. The slice summary still shows per-plate artifacts, estimates and validation. A vendor without `printer` delivery (Bambu Lab) does not get the "Slice and print now" button.
 
 After **Slice and Download**: one menu with the options the profile enables, plus the download the Slice and Download choice itself asks for:
 
