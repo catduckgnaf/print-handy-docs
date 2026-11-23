@@ -149,7 +149,7 @@ Both watched families follow one shared rule set: the same sensitivity profiles,
 
 A completely dark frame is treated as a camera problem, not a print verdict: it is never sent to the vision model and never posts as a print alert. When the watchdog reads its stills from the go2rtc fan-out and the fan-out frame is completely dark, it falls back to the direct camera snapshot once. If the frame is still dark, the check is logged and, at most once per print, a plain camera notice (with only the **Stop asking for this print** button) says the camera image is completely dark and monitoring continues. Timelapse capture applies the same rule: dark frames are skipped and counted rather than recorded, and a print whose every captured frame was dark ends with no video and a completion post that names the dark camera as the reason.
 
-It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: a vision endpoint (`PRINT_HANDY__SERVICES__VISION_CHAT_URL` plus the `CLIPROXY_API_KEY` secret in `.env`) or a `PRINT_VISION_URL` custom endpoint, either one only with vision endpoint camera checks turned on (`PRINT_HANDY__VISION__AI_ENABLED=true`; off by default), or the built-in local failure detector, which is the default (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED`, on unless set to `false`: an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
+It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: the one AI endpoint (`PRINT_HANDY__LLM__CHAT_URL` plus the key secret in `.env` that `PRINT_HANDY__LLM__API_KEY_ENV` names, `LLM_API_KEY` by default), only with AI camera checks turned on (`PRINT_HANDY__VISION__AI_ENABLED=true`; off by default), or the built-in local failure detector, which is the default (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED`, on unless set to `false`: an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
 
 The one-line roast rides the **completion post** (one per print), the failure and cancel posts, and a confirmed-spaghetti camera alert, and comes from the local roast corpus with no LLM or endpoint. It is enabled by default; `vision.roast_enabled` / `PRINT_HANDY__VISION__ROAST_ENABLED` turns it off without affecting camera checks.
 
@@ -329,7 +329,7 @@ Each flavor proves itself during the build (the provider bridge library it must 
 ## First-run configuration
 
 1. Copy `.env.example` to `.env`. Set `PRINT_HANDY_IMAGE` to the verified digest from [Pinning the image](#pinning-the-image); do not use a moving tag such as `:latest`, `:develop` or `:nightly`. Compose has no default for it on purpose: any default would be a tag, which can move or be republished, so an unset value stops `docker compose` with an error that names the variable instead of silently running whatever the tag points to today.
-2. Set `PRINT_HANDY_DATA` to a persistent host directory. Compose creates missing bind-source directories on first start and prepares the five data directories (`state`, `archive`, `records`, `cache`, `spoolman`) for the non-root application user. It does not create or mount a `hermes` folder. Existing data is not recursively re-owned.
+2. Set `PRINT_HANDY_DATA` to a persistent host directory. Compose creates missing bind-source directories on first start and prepares the five data directories (`state`, `archive`, `records`, `cache`, `spoolman`) for the non-root application user. Existing data is not recursively re-owned.
 3. Configure the chat platform token and printer connection details. Keep credentials out of committed files. Add account tokens only for model sites that require them.
 4. Start with `docker compose up -d` and review health and logs. Run the doctor only where its configured service checks are authorized.
 5. Open the Web UI (host port 8088) and follow its first-run walkthrough: printer, chat, camera, and a login only if you want one. The bot token itself still comes from `.env` first. Chat setup can finish the rest once the bot can connect, but no chat flow can create the bot's own token.
@@ -391,99 +391,18 @@ This is an optional, per-install edit for holding a version. The templates stay 
 
 An install already running a tested digest keeps that digest. Do not overwrite it with the template default just because the default changed.
 
-### State volume rename (2.2.5)
+### Old `hermes` state folder (2.4.0)
 
-The main state volume was called `/data/hermes` before 2.2.5, a leftover
-from when Print Handy lived inside Hermes. Its neutral name is now
-`/data/state`. **No upgrade action is required,** and an install
-that keeps mapping only the old path keeps working unchanged. At startup
-the entrypoint checks the two paths:
-
-- Only the legacy volume holds data: `/data/state` becomes a symlink to
-  it, one deprecation line is logged, and every service reads the existing
-  data through the new path. Where `/data/state` is itself a mounted volume
-  (every Compose install and the Unraid template), it cannot be
-  replaced by a symlink: the legacy files are copied into the mounted volume
-  instead, the legacy folder is left untouched, and the log says so.
-- Only the new volume holds data (or neither): the new path is used.
-- Both hold data: the new path wins, a warning is logged, and the legacy
-  folder is ignored.
-
-How the copy behaves (#1144):
-
-- **Nothing is overwritten.** Only files `/data/state` does not have are
-  copied; a file that exists in `/data/state` stays as it is, whatever the
-  timestamps say, so a stale `/data/hermes` can never replace newer data.
-  Where `/data/state` has a file or a symlink in the place of a legacy
-  folder, the `/data/state` entry is kept, that legacy folder is skipped
-  with a warning naming it, and everything else is still copied. Nothing is
-  written through a symlink in `/data/state`.
-- **It happens once.** When the copy completes, `/data/state` gets a
-  `.migrated-from-legacy` file. From then on `/data/hermes` is ignored (with
-  a warning while it still holds files) and is never copied again, even if
-  `/data/state` is later emptied. Delete `/data/hermes` once you have checked
-  `/data/state`.
-- **It resumes.** `.migration-incomplete` exists in `/data/state` while the
-  copy runs. Each file is written under a temporary name and renamed, so a
-  file with its real name is complete. After a crash or a full disk the next
-  start finishes the job and skips what is already there; running it again
-  over the mark is safe. A copy interrupted on an earlier release could leave a
-  truncated file under its real name; the resume completes a file only when
-  it is an exact byte prefix of the legacy file, which loses nothing. If a
-  legacy file or folder cannot be read, the start stops with the error and
-  the mark stays, so the copy is never recorded as done with parts missing:
-  fix the permissions (`chown -R 1000:1000` on the folder) and start again.
-- **What counts as data.** A folder holds data when it contains anything that
-  is not a directory: a file or a symlink (even a dangling one). Empty
-  folders alone count as empty.
-- **Compose.** The shipped Compose file no longer mounts `./data/hermes`, so a
-  new install never creates it. Its one-shot `print-handy-migrate` service
-  runs the copy before the application starts, with `./data` mounted
-  read-only, so an install that still has `./data/hermes` keeps migrating. It
-  exits at once when there is nothing to copy.
-
-Rollback limits:
-
-- The copy never modifies `/data/hermes`, so going back to 2.2.4 or earlier
-  works, but those releases read only `./data/hermes`: they start from the
-  data as it was when you upgraded, and anything you did after the upgrade
-  (new prints, settings, records) is not there.
-- Whatever 2.2.4 writes during the rollback stays in `./data/hermes`. Upgrading
-  again does not copy it forward, because `.migrated-from-legacy` already
-  records the one migration, and even without that record existing files in
-  `/data/state` would win. To carry rollback data forward, stop the container,
-  move `./data/state` aside, delete nothing else, and start the new release
-  with `./data/hermes` in place: the empty `state` folder migrates again.
-  Keep the moved folder until you have checked the result.
-- Take a copy of `./data` before an upgrade across 2.2.5 if the data matters.
-
-The container healthcheck and `python3 -m print_handy.doctor` report which
-path is in use. An explicit `PRINT_HANDY__PATHS__STATE_HOME=/data/hermes`
-setting is honored unchanged. The `/data/hermes` fallback stays for at
-least two minor releases; a later release will remove it with a
-release-note warning.
-
-To adopt the new name (optional, any time before that removal):
-
-1. Stop the container.
-2. Rename the host folder: Compose installs rename
-   `${PRINT_HANDY_DATA:-./data}/hermes` to `${PRINT_HANDY_DATA:-./data}/state`;
-   Unraid installs rename `/mnt/user/appdata/print-handy/hermes` to
-   `/mnt/user/appdata/print-handy/state`.
-3. Update the mapping if yours names the paths explicitly: in
-   `docker-compose.yml` nothing changes, because the shipped file maps only
-   `state` and migrates a leftover `hermes` folder itself; in the Unraid template (the
-   in-repo `docker/unraid/print-handy.xml` and the Community Applications
-   template alike) nothing changes either: the single **Appdata** path
-   already covers both host folders, so renaming the folder in step 2 is
-   the whole move. A container still created from an older multi-path
-   template instead points its **State** path at `/data/state` with host
-   folder `/mnt/user/appdata/print-handy/state` and drops the legacy
-   **State (legacy /data/hermes)** path if it is still mapped.
-4. If you set `PRINT_HANDY__PATHS__STATE_HOME` or `logging.file`
-   explicitly, change `/data/hermes` in those values to `/data/state`.
-5. Start the container and check the startup log: the deprecation line is
-   gone, and the healthcheck's state volume row names `/data/state`.
+Before 2.2.5 the state folder was called `hermes`. 2.4.0 no longer reads or
+migrates it. An install whose state still sits only in `hermes`, with an
+empty `state` folder beside it, refuses to start with one line saying so, so
+it never comes up empty. To fix it, stop the container, delete the empty
+`state` folder (or a `state` symlink an older release made), then rename the
+host folder `hermes` to `state`: `${PRINT_HANDY_DATA:-./data}/hermes` on
+Compose, `/mnt/user/appdata/print-handy/hermes` on Unraid. Delete `state`
+first, because `mv hermes state` onto an existing folder moves `hermes`
+inside it. If you set `PRINT_HANDY__PATHS__STATE_HOME` or `logging.file`
+explicitly, change `/data/hermes` in those values to `/data/state`.
 
 ### Rollback
 
@@ -504,8 +423,6 @@ ghcr.io/catduckgnaf/print-handy@sha256:2d0bc32a8d84bdfd288b4a01114bd86cacb101ba4
 ```text
 ghcr.io/catduckgnaf/print-handy@sha256:e7358f7363af4b67e46cc26c78289c24926f6e7ddb54558eb81a6a31858da9ec
 ```
-
-Rolling back to 2.2.9: 2.2.9 does not know the `paths.state_home` name (2.3.0's rename of `paths.hermes_home`). In Docker the state folder is `/data/state` either way, so nothing changes; on a native install that set only `state_home`, set `hermes_home` to the same folder before starting 2.2.9.
 
 Put that value back in `Repository` (or in `PRINT_HANDY_IMAGE`) and recreate. If the container will not start on the new digest, put the digest you copied out of the template backup back instead of guessing a tag.
 
@@ -631,13 +548,13 @@ chown -R 1000:1000 /mnt/user/appdata/print-handy
 
 All data lives in that one folder. A chat bot token goes in `state/.env` inside it (for example `DISCORD_BOT_TOKEN=...` or `TELEGRAM_BOT_TOKEN=...`) before the first start; create the file as UID 1000 or run the `chown` again afterwards. Then open the Web UI on port 8088 to finish setup. The Web UI is open to anyone who can reach the port until you set a password there. Its `Repository` is the current release's multi-arch index digest, not `:latest` or `:develop`; see [Pinning the image](#pinning-the-image) for the exact edit and the rollback. It publishes no port beyond the Web UI's; add an approved API mapping only as described under Included Spoolman. Image HEALTHCHECK covers the combined runtime.
 
-The runtime selector `PRINT_HANDY_ORCA_CHANNEL` (Compose and `.env.example`) defaults to `stable`, the one bundled OrcaSlicer; `preview` and its pre-#600 name `alpha` also start on that single build with a startup notice (the preview channel was removed, so the setting can be dropped), and any other value stops container startup.
+The runtime selector `PRINT_HANDY_ORCA_CHANNEL` (Compose and `.env.example`) defaults to `stable`, the one bundled OrcaSlicer, and any other value (including the removed `preview` and `alpha`) stops container startup.
 
 The container timezone `TZ` (Compose, `.env.example` and the template) defaults to `America/New_York` and takes any IANA name, for example `Europe/London`. It sets the container's local time: log timestamps, scheduled and timed features, and the bundled Spoolman's timestamps. It does not change how Print Handy shows times in chat. The image ships the timezone database and points `/etc/localtime` at the default zone; a `TZ` set at runtime overrides it for every process, and an unknown name is logged at startup while the default is used instead. Print Handy's chat display times keep following `discord.timezone`, a separate setting.
 
 The Compose environment also carries the feature-enabling variables, the ones that turn a feature on, as opposed to tuning settings, which stay in a mounted YAML pointed to by `PRINT_HANDY_CONFIG`:
 
-- **Camera watch:** `PRINT_HANDY__VISION__AI_ENABLED` (off by default), `PRINT_HANDY__SERVICES__VISION_CHAT_URL`, `PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`, `PRINT_HANDY__VISION__MODEL` and the `CLIPROXY_API_KEY` secret; see [Camera watch](#camera-watch-visual_watch).
+- **Camera watch:** `PRINT_HANDY__VISION__AI_ENABLED` (off by default), `PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`, and the one AI endpoint (`PRINT_HANDY__LLM__CHAT_URL`, `PRINT_HANDY__LLM__MODEL`, and the key secret `LLM_API_KEY`); see [Camera watch](#camera-watch-visual_watch).
 - **Stock Flashforge LAN:** `PRINT_HANDY__FLASHFORGE_STOCK__HOST` with the `AD5X_SERIAL` and `AD5X_CHECK_CODE` secrets.
 - **Bambu Lab LAN status:** `PRINT_HANDY__BAMBU__LAN_HOST`, `PRINT_HANDY__BAMBU__LAN_SERIAL` and the `BAMBU_LAN_PASSWORD` secret. The Bambu Lab models (`bambulab.a1`, `bambulab.p1s`) are offline only.
 - **Key-protected Moonraker:** the `MOONRAKER_API_KEY` secret.
@@ -663,11 +580,11 @@ If both folders exist, compare their contents and merge the needed files deliber
 
 ### Recovery: installed the single-path template while the image declared volumes
 
-Images released before this was fixed (2.2.7 and earlier) declared `VOLUME` for `/data/state`, `/data/hermes`, `/data/archive`, `/data/records`, `/data/cache` and `/data/spoolman`. With a template that binds only `/data`, Docker stores those six folders in anonymous volumes instead of the Appdata folder, so the host folder stays nearly empty and the data survives only as long as the container is not removed. Images built after the declaration was removed do not do this. If you installed the single-path template on an older image, move the data out before you recreate the container. Do not run `docker volume prune` and do not remove the container first: until the copy below is done, those anonymous volumes are the only copy of that data.
+Images released before this was fixed (2.2.7 and earlier) declared `VOLUME` for `/data/state`, `/data/archive`, `/data/records`, `/data/cache` and `/data/spoolman`. With a template that binds only `/data`, Docker stores those folders in anonymous volumes instead of the Appdata folder, so the host folder stays nearly empty and the data survives only as long as the container is not removed. Images built after the declaration was removed do not do this. If you installed the single-path template on an older image, move the data out before you recreate the container. Do not run `docker volume prune` and do not remove the container first: until the copy below is done, those anonymous volumes are the only copy of that data.
 
 1. Stop the container (do not remove it yet).
 2. List what it uses: `docker inspect print-handy --format '&#123;&#123;range .Mounts&#125;&#125;&#123;&#123;.Type&#125;&#125; &#123;&#123;.Destination&#125;&#125; &#123;&#123;.Name&#125;&#125; &#123;&#123;.Source&#125;&#125;&#123;&#123;"\n"&#125;&#125;&#123;&#123;end&#125;&#125;'`. Rows of type `volume` with a long hexadecimal name and a destination under `/data` are the anonymous volumes. `docker volume ls` lists them by name.
-3. Copy each one into the matching folder under Appdata, keeping ownership, for example: `cp -a /var/lib/docker/volumes/<name>/_data/. /mnt/user/appdata/print-handy/state/`. The Source column of step 2 gives the path to copy from. Do the same for `hermes`, `archive`, `records`, `cache` and `spoolman`.
+3. Copy each one into the matching folder under Appdata, keeping ownership, for example: `cp -a /var/lib/docker/volumes/<name>/_data/. /mnt/user/appdata/print-handy/state/`. The Source column of step 2 gives the path to copy from. Do the same for `archive`, `records`, `cache` and `spoolman`.
 4. Run `chown -R 1000:1000 /mnt/user/appdata/print-handy`, then update to an image that no longer declares the volumes (or add a **Path** entry for each folder, host folder `/mnt/user/appdata/print-handy/<name>`, container path `/data/<name>`), and recreate the container.
 5. Once it runs correctly, remove the leftover anonymous volumes with `docker volume rm <name>`.
 
@@ -717,7 +634,7 @@ Each architecture is built on its matching native runner: `ubuntu-24.04` for amd
 
 ## Build dimensions and slicers
 
-All OS stages use Debian 13 slim. `APP_CHANNEL=stable|development` labels provenance, not a source switch. `WITH_ORCA=true` includes Orca; default false omits it. OrcaSlicer is never built from source: `WITH_ORCA=true` installs the one pinned official prebuilt release: the 2.5 line since #356 (v2.5.0-alpha first, then v2.5.0-beta, now v2.5.1), the shipped slicer (the first release line whose BBL profiles cover the H2C and A2L, and whose packed preset caches Print Handy reads directly). There is no second channel: `PRINT_HANDY_ORCA_CHANNEL=stable` selects the single wrapper, and `preview`/`alpha` start on it with a startup notice (the preview channel was removed); absent executables and invalid selections fail closed. `/usr/local/bin/orca-slicer` remains the stable path. Existing entrypoint preserves Xvfb for headless slicing.
+All OS stages use Debian 13 slim. `APP_CHANNEL=stable|development` labels provenance, not a source switch. `WITH_ORCA=true` includes Orca; default false omits it. OrcaSlicer is never built from source: `WITH_ORCA=true` installs the one pinned official prebuilt release: the 2.5 line since #356 (v2.5.0-alpha first, then v2.5.0-beta, now v2.5.1), the shipped slicer (the first release line whose BBL profiles cover the H2C and A2L, and whose packed preset caches Print Handy reads directly). There is no second channel: `PRINT_HANDY_ORCA_CHANNEL=stable` selects the single wrapper, and any other value (including the removed `preview` and `alpha`) is refused; absent executables and invalid selections fail closed. `/usr/local/bin/orca-slicer` remains the stable path. Existing entrypoint preserves Xvfb for headless slicing.
 
 The official prebuilt archives are downloaded and extracted only inside approved hosted image builds, never installed on the host. The bundled build's version and source revision (shared by both architectures) and each architecture's asset name and SHA256 are pinned by `docker/orca-prebuilt.sh`, and the SHA256 is verified before extraction; any architecture other than amd64 or arm64 fails closed in that script. `ORCA_BUILD_JOBS=auto` bounds CPU/memory usage for the optional Bambu Studio source build only; explicit values accept 1 through 64. See [SETTINGS.md](./settings.md#build-arguments).
 
@@ -748,7 +665,12 @@ The scheduled `.github/workflows/upstream-watch.yml` (Mondays 13:37 UTC, or on d
 
 Every `docker-publish` dispatch starts with the **release surfaces gate** (the `surfaces-gate` job, running `scripts/check_release_surfaces.py`). The gate checks that the README and the `print_handy` package version match the version being published, that the README's links resolve, and that the GitHub Pages site (`catduckgnaf/print-handy-docs`) has no drift against `docs/` at the release ref: drift as defined by the docs repo's own Docs sync check (`scripts/check-sync.sh` there), including removed pages. In candidate mode (`publish=false`) stale surfaces are only reported as warnings. With `publish=true` the gate fails the run before any image is built or pushed until the surfaces are current. The remedy is the **Docs auto-sync** workflow in `print-handy-docs` (`gh workflow run docs-auto-sync.yml --repo catduckgnaf/print-handy-docs -f ref=<version>`): it opens a sync PR there; merge it, then re-dispatch the publish. Publishing the GitHub release also triggers that sync automatically via `repository_dispatch` when the `DOCS_SYNC_TOKEN` secret is configured on this repo (a token with contents + pull-requests write on `print-handy-docs`); without it, the post-release surfaces checklist issue records the skip and the manual link. The same workflow also sends the Home Assistant OS app (`catduckgnaf/print-handy-haos-addon`) a `print-handy-release` dispatch, using the `HAOS_APP_DISPATCH_TOKEN` secret (a fine-grained token with Contents read and write on that repository), or `DOCS_SYNC_TOKEN` when that token also reaches it. The app then publishes its update within minutes. Without either, the app still finds the release on its own scheduled check, and the checklist issue records which happened. The gate applies to version releases only: nightly is a separate workflow (`.github/workflows/nightly.yml`) and is never gated.
 
-The manual `.github/workflows/docker-publish.yml` covers the whole matrix in one dispatch. Its build job runs both legs (amd64 and arm64) on native runners; each leg builds its platform image, runs the headless slicer smoke and the offline runtime acceptance for that arch. Only with `publish=true`, and only after that leg's acceptance succeeded, does a leg log in and push: by digest only, never by tag. A final manifest job (publication dispatches only, after every leg succeeded) combines the pushed digests with `docker buildx imagetools create` into the tag `:VERSION` and, when the guard says this is the highest released version, `:latest`, and writes the manifest digests to the step summary and the uploaded evidence. With `publish=false` (candidate mode) every leg still builds and must pass acceptance, and nothing is pushed and no manifest is created. Candidate inputs for the next release are `version=<next MAJOR.MINOR.PATCH>`, `publish=false`. Preserve every existing tag (2.1.1, 2.1.2, 2.1.3 era tags included); never overwrite or republish an existing tag.
+The manual `.github/workflows/docker-publish.yml` covers amd64 and arm64 in one dispatch on native runners. When a platform builds, it runs the headless slicer smoke, offline runtime acceptance, and release lifecycle gate. Any push from a build leg is by digest only, after its gates succeed.
+
+- **Candidate (`publish=false`):** No release tags or multi-platform manifests are published. A candidate on `main` or a tag still writes accepted platform images to GHCR as untagged digests. Each leg uploads a `digest-<arch>` artifact with a `candidate-<arch>.json` record (commit, version, platform, digest). A candidate on any other ref makes no registry writes.
+- **Publication (`publish=true`):** The surfaces gate checks for accepted digests from a successful run on the same commit and version. `scripts/reuse_candidate.py` verifies both artifact records and their registry labels. If they match, publication reuses those digests without rebuilding; otherwise the ordinary build and its gates run. The final manifest job combines the accepted digests using `docker buildx imagetools create`, publishes `:VERSION` and, for the highest released version, `:latest`, and records the manifest digests in the step summary and uploaded evidence.
+
+To make the next release candidate reusable, dispatch it on the tag (or on `main` at the bump merge commit) with `version=<next MAJOR.MINOR.PATCH>` and `publish=false`. Preserve every existing tag (2.1.1, 2.1.2, 2.1.3 era tags included); never overwrite or republish an existing tag.
 
 A publication dispatch (`publish=true`) is also checked by the **publish ref guard** (`scripts/check_publish_ref.py`, the first step of the same `surfaces-gate` job), which fails the run before anything is built unless all of these hold: the dispatched ref is the release tag (select the tag, not a branch, in the "Use workflow from" box, and the tag name must equal the version); the tagged commit is reachable from `main`; the `CI` workflow concluded successfully on that exact commit (any event counts; pushes to `main` keep only the newest queued CI run, so when the tagged commit's own run was replaced by a later merge, dispatch `CI` on the tag first); and the `Release checklist: X.Y.Z` issue exists and is closed. Candidate runs (`publish=false`) are never blocked and work from any ref. `:latest` moves only when the version being published is the highest released version (a plain `MAJOR.MINOR.PATCH` tag reachable from `main`); publishing an older patch updates only `:VERSION`.
 
