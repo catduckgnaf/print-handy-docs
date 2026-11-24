@@ -21,20 +21,20 @@ Use `.venv/bin/python` wherever this page says `python3` from here on, or activa
 
 ## 2. OrcaSlicer
 
-Print Handy's default slicer command is `flatpak run com.orcaslicer.OrcaSlicer`. Install the 2.5.1 build that the Docker image ships. [`scripts/install-orca-flatpak.sh`](https://github.com/catduckgnaf/print-handy/blob/main/scripts/install-orca-flatpak.sh) does exactly this for CI: it installs the pinned GNOME runtime, checks the bundle's SHA-256 and installs it. It reads its pins from the environment, which the top of [`.github/workflows/ci.yml`](https://github.com/catduckgnaf/print-handy/blob/main/.github/workflows/ci.yml) sets (`ORCA_BUNDLE_VERSION`, `ORCA_BUNDLE_SHA256`, `ORCA_RUNTIME_REF`, `ORCA_RUNTIME_COMMIT`, `ORCA_FLATPAK_APP_ID`), so export those values first and run it from the repository root:
+Print Handy's default slicer command is `flatpak run com.orcaslicer.OrcaSlicer`. Install the 2.5.2 build that the Docker image ships. [`scripts/install-orca-flatpak.sh`](https://github.com/catduckgnaf/print-handy/blob/main/scripts/install-orca-flatpak.sh) does exactly this for CI: it installs the pinned GNOME runtime, checks the bundle's SHA-256 and installs it. It reads its pins from the environment, which the top of [`.github/workflows/ci.yml`](https://github.com/catduckgnaf/print-handy/blob/main/.github/workflows/ci.yml) sets (`ORCA_BUNDLE_VERSION`, `ORCA_BUNDLE_SHA256`, `ORCA_RUNTIME_REF`, `ORCA_RUNTIME_COMMIT`, `ORCA_FLATPAK_APP_ID`), so export those values first and run it from the repository root:
 
 ```sh
 sh scripts/install-orca-flatpak.sh
 ```
 
-Or install by hand from the OrcaSlicer 2.5.1 release page: download the `x86_64` Flatpak bundle and run `flatpak install --user --bundle <the downloaded file>`. Either way, `flatpak run com.orcaslicer.OrcaSlicer --help` should print usage.
+Or install by hand from the OrcaSlicer 2.5.2 release page: download the `x86_64` Flatpak bundle and run `flatpak install --user --bundle <the downloaded file>`. Either way, `flatpak run com.orcaslicer.OrcaSlicer --help` should print usage.
 
 ## 3. Settings: YAML preferred, TOML supported
 
-Defaults live in `config/home.yaml`. Put machine-specific overrides in the gitignored `config/local.yaml`; an existing `config/local.toml` remains supported. YAML takes precedence when both formats are present. See [the configuration guide](./configuration-yaml.md) for precedence, validation and migration details.
+Defaults live in `config/home.yaml`. Put machine-specific overrides in the gitignored `config/local.yaml`; `config/local.toml` is no longer read: convert it to `config/local.yaml` before updating to 2.3.7 (startup refuses and names the file otherwise). See [the configuration guide](./configuration-yaml.md) for precedence, validation and migration details.
 
 - `services.moonraker_url` and `services.spoolman_url`
-- `paths.state_home` (the state folder; called `paths.hermes_home` before 2.3.0, and the old name is still read through 2.3.x and removed in 2.4.0), `archive`, `records_vault` and `cache`
+- `paths.state_home` (the state folder), `archive`, `records_vault` and `cache`
 - `printer.model` and supported printer-specific overrides
 
 The guided setup (`python3 -m print_handy.bot setup`) writes these with you; see [guided setup and debugging](./guided-setup-debugging.md).
@@ -76,11 +76,11 @@ Code is symlinked, so the pull is the update. Template changes do not touch file
 
 ## Coming from the old Hermes install
 
-The Hermes install is removed. Print Handy used to offer a second install that hosted the bot inside a Hermes Agent profile (`scripts/install-hermes.sh`, `bot.mode: hermes`). That install method and mode are gone, and a config that still says `mode: hermes` is refused at load with a message naming the removal.
+The Hermes install is removed. Print Handy used to offer a second install that hosted the bot inside a Hermes Agent profile (`scripts/install-hermes.sh`, `bot.mode: hermes`). That install method and mode are gone. A config that still says `mode: hermes` is not refused: the key is unknown and load warns by name. Remove the line.
 
 To move an old Hermes-hosted install over:
 
 1. Stop the old gateway's Discord connection first. One bot token, one live connection.
 2. Keep your config and state where they are. `paths.state_home` is just the state folder's path, and it can keep pointing at the old profile directory.
-3. Set `bot.mode` to `standalone`.
+3. Remove any `bot.mode` line. The bot always runs itself.
 4. Install the services as in step 4 above.

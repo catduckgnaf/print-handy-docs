@@ -108,20 +108,18 @@ the print ends. Example lookup: `jq -r 'select(.status != "completed") |
 
 ## More than one printer
 
-One container serves the whole roster. Declare every printer in the mounted config file with a `[[printers]]` list: the list itself is file-only, because list values cannot come from environment variables:
+One container serves the whole roster. Declare every printer in the mounted config file with a `printers:` list: the list itself is file-only, because list values cannot come from environment variables:
 
-```toml
-[[printers]]
-id = "garage-a1"
-model = "bambulab.a1"
-chat_id = "<a1-channel-id>"
-lan_host = "<a1-lan-ip>"
-lan_serial = "<a1-serial>"
-
-[[printers]]
-id = "workshop-ad5x"
-model = "flashforge.ad5x"
-moonraker_url = "http://<ad5x-lan-ip>:7125"
+```yaml
+printers:
+  - id: garage-a1
+    model: bambulab.a1
+    chat_id: "<a1-channel-id>"
+    lan_host: "<a1-lan-ip>"
+    lan_serial: "<a1-serial>"
+  - id: workshop-ad5x
+    model: flashforge.ad5x
+    moonraker_url: "http://<ad5x-lan-ip>:7125"
 ```
 
 The first entry is the default printer and is named wherever output talks about "the printer". Each printer keeps its own state folder and job queue under `state/printers/<id>/` inside the one data directory, gets its own listener child under the supervisor (a dead listener never takes the bot or a sibling listener down), and is bound to its own chat channel: an approval in a channel can only start that channel's printer. The healthcheck reports every listener, and the Web UI status page lists the roster read-only. Spoolman stays one shared inventory for all printers. The full roster reference is [SETTINGS.md: Printers list](./settings.md#printers-list).
@@ -149,13 +147,13 @@ Both watched families follow one shared rule set: the same sensitivity profiles,
 
 A completely dark frame is treated as a camera problem, not a print verdict: it is never sent to the vision model and never posts as a print alert. When the watchdog reads its stills from the go2rtc fan-out and the fan-out frame is completely dark, it falls back to the direct camera snapshot once. If the frame is still dark, the check is logged and, at most once per print, a plain camera notice (with only the **Stop asking for this print** button) says the camera image is completely dark and monitoring continues. Timelapse capture applies the same rule: dark frames are skipped and counted rather than recorded, and a print whose every captured frame was dark ends with no video and a completion post that names the dark camera as the reason.
 
-It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: the one AI endpoint (`PRINT_HANDY__LLM__CHAT_URL` plus the key secret in `.env` that `PRINT_HANDY__LLM__API_KEY_ENV` names, `LLM_API_KEY` by default), only with AI camera checks turned on (`PRINT_HANDY__VISION__AI_ENABLED=true`; off by default), or the built-in local failure detector, which is the default (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED`, on unless set to `false`: an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, downloads once into `/data/state/models`, SHA-256 verified). With none of the three, camera checks stay off.
+It needs a Moonraker URL, a camera snapshot (`PRINT_HANDY__SERVICES__CAMERA_SNAPSHOT_URL`; derived from the Moonraker host when empty) and a way to judge frames: the one AI endpoint (`PRINT_HANDY__LLM__CHAT_URL` plus the key secret in `.env` that `PRINT_HANDY__LLM__API_KEY_ENV` names, `LLM_API_KEY` by default), only with AI camera checks turned on (`PRINT_HANDY__VISION__AI_ENABLED=true`; off by default), or the built-in local failure detector, which is the default (`PRINT_HANDY__VISION__LOCAL_DETECTOR_ENABLED`, on unless set to `false`: an ONNX detector that runs in this container, no endpoint or key; its pinned model, about 202 MB, is bundled in the image at `/opt/print-handy/models`, SHA-256 verified at build time, so the container never downloads it). With none of the three, camera checks stay off.
 
 The one-line roast rides the **completion post** (one per print), the failure and cancel posts, and a confirmed-spaghetti camera alert, and comes from the local roast corpus with no LLM or endpoint. It is enabled by default; `vision.roast_enabled` / `PRINT_HANDY__VISION__ROAST_ENABLED` turns it off without affecting camera checks.
 
 An optional **auto light-off** builds on the same verdicts: set `PRINT_HANDY__VISION__AUTO_LIGHT_OFF_MINUTES` above zero (30 is the suggested value; `0`, the default, is off) and the printer's light turns on when a print starts and off again after the camera has seen an empty plate for that many minutes after a print ends. Any non-empty or uncertain check restarts the wait, so a part left on the plate keeps the light on. It covers Moonraker printers (the light object named with `PRINT_HANDY__VISION__LIGHT_OBJECT`, for example `led chamber_led`, or auto-discovered when the printer has exactly one `led` / `neopixel` / `output_pin` object), Bambu Lab chamber lights, and Elegoo SDCP chamber lights (turn-on only until an SDCP camera source is verified); other families have no light to switch and `bot check` says so. On Moonraker the switch is thrown in Moonraker, so Home Assistant's Moonraker integration sees the same light state with no extra wiring. This is the one opt-in exception to the watchdog's alert-only rule, and it covers the light only: never motion, heaters or print control. Full behavior is in [SETTINGS.md](./settings.md#auto-light-off).
 
-Two settings tune it, settable in the mounted YAML (`visual_watch` in `config/docker.yaml`), in TOML (`[visual_watch]` in `config/docker.toml`), or as Compose/`.env` variables. Compose carries them as environment entries; the Unraid template does not, so on Unraid they are set in the mounted config file or the Web UI:
+Two settings tune it, settable in the mounted YAML (`visual_watch` in `config/docker.yaml`), or as Compose/`.env` variables. Compose carries them as environment entries; the Unraid template does not, so on Unraid they are set in the mounted config file or the Web UI:
 
 | YAML key | Environment variable | Default | What it does |
 |---|---|---|---|
@@ -173,7 +171,7 @@ Print Handy has a Web UI: a simple status page plus a picker configuration page 
 
 **Claim it at first start.** The container serves the Web UI with no login until one is set, printer controls included. After the first start, open port 8088 and finish the walkthrough's **Login** step: set a password, or record that you mean to leave it open on a trusted network. To have it claimed before anyone can reach it, set `WEBUI_ACCESS_TOKEN` in `.env` (or the masked Unraid template variable) before the first start. See [First boot and logins](./webui.md#first-boot-and-logins).
 
-Enable it in the mounted YAML (`webui` in `config/docker.yaml`), in TOML (`[webui]` in `config/docker.toml`), or with Compose/`.env` variables. Compose carries them as environment entries; the Unraid template carries only the port mapping, so on Unraid they are set in the mounted config file:
+Enable it in the mounted YAML (`webui` in `config/docker.yaml`), or with Compose/`.env` variables. Compose carries them as environment entries; the Unraid template carries only the port mapping, so on Unraid they are set in the mounted config file:
 
 | YAML key | Environment variable | Default | What it does |
 |---|---|---|---|
@@ -391,9 +389,9 @@ This is an optional, per-install edit for holding a version. The templates stay 
 
 An install already running a tested digest keeps that digest. Do not overwrite it with the template default just because the default changed.
 
-### Old `hermes` state folder (2.4.0)
+### Old `hermes` state folder (2.3.7)
 
-Before 2.2.5 the state folder was called `hermes`. 2.4.0 no longer reads or
+Before 2.2.5 the state folder was called `hermes`. 2.3.7 no longer reads or
 migrates it. An install whose state still sits only in `hermes`, with an
 empty `state` folder beside it, refuses to start with one line saying so, so
 it never comes up empty. To fix it, stop the container, delete the empty
@@ -634,7 +632,7 @@ Each architecture is built on its matching native runner: `ubuntu-24.04` for amd
 
 ## Build dimensions and slicers
 
-All OS stages use Debian 13 slim. `APP_CHANNEL=stable|development` labels provenance, not a source switch. `WITH_ORCA=true` includes Orca; default false omits it. OrcaSlicer is never built from source: `WITH_ORCA=true` installs the one pinned official prebuilt release: the 2.5 line since #356 (v2.5.0-alpha first, then v2.5.0-beta, now v2.5.1), the shipped slicer (the first release line whose BBL profiles cover the H2C and A2L, and whose packed preset caches Print Handy reads directly). There is no second channel: `PRINT_HANDY_ORCA_CHANNEL=stable` selects the single wrapper, and any other value (including the removed `preview` and `alpha`) is refused; absent executables and invalid selections fail closed. `/usr/local/bin/orca-slicer` remains the stable path. Existing entrypoint preserves Xvfb for headless slicing.
+All OS stages use Debian 13 slim. `APP_CHANNEL=stable|development` labels provenance, not a source switch. `WITH_ORCA=true` includes Orca; default false omits it. OrcaSlicer is never built from source: `WITH_ORCA=true` installs the one pinned official prebuilt release: the 2.5 line since #356 (v2.5.0-alpha first, then v2.5.0-beta, now v2.5.2), the shipped slicer (the first release line whose BBL profiles cover the H2C and A2L, and whose packed preset caches Print Handy reads directly). There is no second channel: `PRINT_HANDY_ORCA_CHANNEL=stable` selects the single wrapper, and any other value (including the removed `preview` and `alpha`) is refused; absent executables and invalid selections fail closed. `/usr/local/bin/orca-slicer` remains the stable path. Existing entrypoint preserves Xvfb for headless slicing.
 
 The official prebuilt archives are downloaded and extracted only inside approved hosted image builds, never installed on the host. The bundled build's version and source revision (shared by both architectures) and each architecture's asset name and SHA256 are pinned by `docker/orca-prebuilt.sh`, and the SHA256 is verified before extraction; any architecture other than amd64 or arm64 fails closed in that script. `ORCA_BUILD_JOBS=auto` bounds CPU/memory usage for the optional Bambu Studio source build only; explicit values accept 1 through 64. See [SETTINGS.md](./settings.md#build-arguments).
 

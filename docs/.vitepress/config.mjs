@@ -52,6 +52,7 @@ export default defineConfig({
           { text: 'Reforge printers', link: '/reforge' },
           { text: 'Print Handy 2.3.6 (Draft / Unreleased)', link: '/release-2.3.6' },
           { text: 'Upstream Issue Watch.Md', link: '/upstream-issue-watch' },
+          { text: 'Print Handy 2.3.7 (Draft / Unreleased)', link: '/release-2.3.7' },
         ],
       },
       {
