@@ -201,7 +201,7 @@ These additions let the Home Assistant integration (ha-print-handy #14) poll che
 Both pages are **on by default**, under the timelapse settings:
 
 - The Data tab and Pasta Wrapped are on by default, each under its own switch: `timelapse.data_enabled` (default `true`) turns on the Data tab and its JSON endpoint, and `timelapse.wrapped_enabled` (default `true`) turns on the Pasta Wrapped page and its JSON endpoints. While `data_enabled` is unset it follows `wrapped_enabled`; setting it pins the Data tab independently. A settings-page save sets `data_enabled` only when you change the Data tab toggle in that save; a save that changes only the Pasta Wrapped switch leaves it unset, so the Data tab follows Pasta Wrapped after the restart. While a switch is off, its link is not in the navigation and its routes answer a named disabled refusal. Installs that set `wrapped_enabled: false` before the split keep both off: an explicit value is never overridden by the new default.
-- `timelapse.wrapped_video` (default `true`) turns on the video step on the Pasta Wrapped page. It needs `wrapped_enabled` on. With it on, the page offers **Make my Pasta Wrapped video**: an on-demand, local compile of generated stat cards, the commentary as on-screen text, and the year's timelapse clips where they can be found on disk (cards only, named in the result, when none are found). The compile runs as one background job per year, in a fresh temporary work folder that is always removed: pressing the button again (a double click, a browser retry) joins the job already running instead of starting another, the page shows `Step n of N` while it works and the finished video when it is done, a failure shows a short reason, and every ffmpeg and Piper run has a timeout scaled to its work, so a hung encoder ends the job instead of holding it forever. You can leave the page while it compiles. Print titles are drawn from small text files with expansion off, so a title such as "50% scale cube" is drawn as written. The commentary is the local deterministic script, never rewritten by an AI model (the setting was renamed from `wrapped_ai_video`, and the old spelling still works); any missing piece (no ffmpeg, no timelapses) is named in the result. The finished video lands in a `wrapped` folder under the records vault as `wrapped-<year>.mp4`, next to a `wrapped-<year>-script.json` sidecar, and the page names where it landed. Nothing is generated automatically and the video itself is never posted anywhere: sharing it is your choice. Nothing about Pasta Wrapped leaves this machine. Narration is separate and opt-in: see the Pasta Wrapped video presentation section below.
+- `timelapse.wrapped_video` (default `true`) turns on the video step on the Pasta Wrapped page. It needs `wrapped_enabled` on. With it on, the page offers **Make my Pasta Wrapped video**: an on-demand, local compile of generated stat cards, the commentary as on-screen text, and the year's timelapse clips where they can be found on disk (cards only, named in the result, when none are found). The compile runs as one background job per year, in a fresh temporary work folder that is always removed: pressing the button again (a double click, a browser retry) joins the job already running instead of starting another, the page shows `Step n of N` while it works and the finished video when it is done, a failure shows a short reason, and every ffmpeg and Piper run has a timeout scaled to its work, so a hung encoder ends the job instead of holding it forever. You can leave the page while it compiles. Print titles are drawn from small text files with expansion off, so a title such as "50% scale cube" is drawn as written. The commentary is the local deterministic script, never rewritten by an AI model; any missing piece (no ffmpeg, no timelapses) is named in the result. The finished video lands in a `wrapped` folder under the records vault as `wrapped-<year>.mp4`, next to a `wrapped-<year>-script.json` sidecar, and the page names where it landed. Nothing is generated automatically and the video itself is never posted anywhere: sharing it is your choice. Nothing about Pasta Wrapped leaves this machine. Narration is separate and opt-in: see the Pasta Wrapped video presentation section below.
 
 ### Sharing a Pasta Wrapped
 
@@ -279,7 +279,7 @@ WEBUI_ACCESS_TOKEN=<choose-a-long-random-token>
 
 On startup, the supervisor's Web UI gate reads the resolved configuration. It starts `python3 -m print_handy.webui` only when the Web UI is enabled and a port is set. If the configuration cannot be resolved, the gate stops the container rather than guessing. A bind with no access token and no saved login starts open and unclaimed, and the gate logs `no login set yet`.
 
-The Web UI can also be enabled in the selected Docker YAML or TOML file (`webui` in `config/docker.yaml`, or `[webui]` in `config/docker.toml`). Environment values override the file, so an environment setting left at the Compose default can be the reason a file change appears to have no effect; the configuration page marks those fields as environment-overridden.
+The Web UI can also be enabled in the selected Docker YAML file (`webui` in `config/docker.yaml`). Environment values override the file, so an environment setting left at the Compose default can be the reason a file change appears to have no effect; the configuration page marks those fields as environment-overridden.
 
 ## Enable it on Unraid
 
@@ -477,7 +477,7 @@ Every field shows its effective value and a provenance badge:
 | Badge | Meaning |
 |---|---|
 | `model default` | Supplied by the selected printer model's defaults |
-| `home config` | Supplied by `config/home.yaml` or its legacy TOML fallback |
+| `home config` | Supplied by `config/home.yaml` |
 | `settings file` | Supplied by the selected settings file |
 | `environment override` | Supplied by an environment variable |
 | `default` | Supplied by settings validation when no layer names the key |
@@ -498,7 +498,7 @@ The preview form carries the parsed state forward as hidden inputs, and the conf
 
 ### Environment overrides stay locked
 
-A field whose effective value comes from the environment renders disabled and is labelled as overridden. It is skipped when the form is parsed: even a hand-crafted submission naming it changes nothing. To change that setting, change or unset the `PRINT_HANDY__SECTION__KEY` variable (or its supported legacy name), then restart Print Handy. The Web UI never shadow-writes an env-overridden value into the file merely to make the file look complete.
+A field whose effective value comes from the environment renders disabled and is labelled as overridden. It is skipped when the form is parsed: even a hand-crafted submission naming it changes nothing. To change that setting, change or unset the `PRINT_HANDY__SECTION__KEY` variable, then restart Print Handy. The Web UI never shadow-writes an env-overridden value into the file merely to make the file look complete.
 
 ### Restart required
 
@@ -508,14 +508,14 @@ Every configuration change needs a restart of the process or container that uses
 
 A save rewrites the settings file from its parsed mappings. Comments in a hand-edited file are **not guaranteed to survive**, and list or table values outside the catalog are preserved as parsed data rather than as their original text. The page states this before saving. Keep a separate copy when the comments in a hand-maintained file matter.
 
-If the selected settings file is a legacy TOML file, the Web UI refuses to rewrite it as YAML. Point `PRINT_HANDY_CONFIG` at a YAML file, or edit the TOML file by hand.
+Legacy TOML settings files are refused since Print Handy 2.3.7. Convert them to YAML and point `PRINT_HANDY_CONFIG` at the YAML file before using the Web UI.
 
 ## What the Web UI cannot do
 
 - It cannot control a printer: no print, pause, resume, cancel, movement, heating, macro, or job-management actions.
 - It cannot display, accept, or write secret values. Bot tokens, API keys, passwords, access codes and the Web UI token itself stay in the environment. Settings that merely name an environment variable, such as `webui.access_token_env`, are not picker fields.
 - It cannot edit the environment, the home configuration, or any layer other than the selected settings file.
-- It cannot edit settings outside the catalog. File-only tables and lists such as `material_temps`, `nozzle_temp_offsets` and the `[[printers]]` roster remain YAML/TOML edits (or the setup wizard / guided setup for the roster); `delivery.methods` is in the catalog because it has a vendor-defined picker.
+- It cannot edit settings outside the catalog. File-only tables and lists such as `material_temps`, `nozzle_temp_offsets` and the `printers:` roster remain YAML edits (or the setup wizard / guided setup for the roster); `delivery.methods` is in the catalog because it has a vendor-defined picker.
 - It does not replace Discord, Telegram, Matrix, or the CLI setup wizard. Those surfaces and the Web UI work over the same settings; see [guided setup and debugging](./guided-setup-debugging.md) and [YAML configuration](./configuration-yaml.md).
 - The timelapse archive `ssh_key` field is only a filesystem path. It never contains or uploads private-key contents.
 
@@ -538,7 +538,7 @@ If the selected settings file is a legacy TOML file, the Web UI refuses to rewri
 | A field cannot be edited | Its badge says `environment override`, or the value is not in the catalog. Change the environment variable and restart, or edit the YAML directly for an uncatalogued setting. |
 | A save is refused and the file did not change | Read the error beside the field or at the top of the form. Invalid combinations are rejected before the atomic write; the file remains byte-identical. Correct the value and preview again. |
 | Saving worked, but behavior did not change | Restart the Print Handy process or container that consumes the setting. A running process keeps the settings it loaded at start. |
-| A legacy TOML save is refused | The Web UI writes YAML only. Select a YAML settings file with `PRINT_HANDY_CONFIG`, or keep editing the TOML file manually. |
+| A legacy TOML save is refused | Print Handy no longer loads TOML settings. Convert the file to YAML and select it with `PRINT_HANDY_CONFIG`. |
 
 ## Printer controls
 

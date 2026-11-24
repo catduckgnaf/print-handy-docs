@@ -61,7 +61,6 @@ printer-bound happens, see "Shared channels" in SETTINGS.md.
 ```yaml
 # config/local.yaml
 bot:
-  mode: standalone
   platform: telegram
 telegram:
   chat_id: "-1001234567890"
@@ -84,7 +83,7 @@ message is ignored and `check` fails.
 
 ```bash
 export TELEGRAM_BOT_TOKEN=...   # or put it in the data folder's .env
-python3 -m print_handy.bot check   # offline: mode, token present, chat, allowed users, handlers, no Hermes
+python3 -m print_handy.bot check   # offline: platform, token, chat, allowed users, handlers
 python3 -m print_handy.bot         # start polling
 ```
 
