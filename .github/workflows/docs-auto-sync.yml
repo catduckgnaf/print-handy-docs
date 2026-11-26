@@ -55,6 +55,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       INPUT_REF: ${{ inputs.ref }}
       PAYLOAD_REF: ${{ github.event.client_payload.ref }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
       - name: Checkout this docs repo
         uses: actions/checkout@v4
@@ -99,10 +100,13 @@ jobs:
 
       - name: Apply the sync
         id: sync
+        env:
+          EXISTING_BRANCH: ${{ steps.ref.outputs.existing_branch }}
         run: |
           set -euo pipefail
-          existing_branch="${{ steps.ref.outputs.existing_branch }}"
+          existing_branch="${EXISTING_BRANCH:-}"
           if [ -n "$existing_branch" ]; then
+            [[ "$existing_branch" =~ ^docs-sync/[A-Za-z0-9._/-]+$ ]] || { echo "Unsafe sync branch: $existing_branch" >&2; exit 1; }
             git fetch origin "$existing_branch"
             git switch -C "$existing_branch" FETCH_HEAD
           else
@@ -144,12 +148,16 @@ jobs:
 
       - name: Commit, push and open the sync PR
         if: steps.sync.outputs.changed == 'true'
+        env:
+          SYNC_REF: ${{ steps.ref.outputs.ref }}
+          NEW_BRANCH: ${{ steps.ref.outputs.branch }}
+          EXISTING_BRANCH: ${{ steps.ref.outputs.existing_branch }}
         run: |
           set -euo pipefail
-          ref="${{ steps.ref.outputs.ref }}"
-          branch="${{ steps.ref.outputs.branch }}"
-          branch="${{ steps.ref.outputs.existing_branch }}"
-          [ -n "$branch" ] || branch="${{ steps.ref.outputs.branch }}"
+          ref="$SYNC_REF"
+          branch="${EXISTING_BRANCH:-}"
+          [ -n "$branch" ] || branch="$NEW_BRANCH"
+          [[ "$branch" =~ ^docs-sync/[A-Za-z0-9._/-]+$ ]] || { echo "Unsafe sync branch: $branch" >&2; exit 1; }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$RUNNER_TEMP/print-handy-upstream" rev-parse HEAD > .docs-sync-upstream-sha

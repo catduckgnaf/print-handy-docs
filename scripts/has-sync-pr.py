@@ -25,10 +25,15 @@ def main():
         check=True, text=True, capture_output=True,
     )
     pages = json.loads(result.stdout)
-    found = [pr["number"] for page in pages for pr in page
-             if marker(ref) in (pr.get("body") or "")
-             or (pr.get("title") == "Docs sync: print-handy@" + ref
-                 and pr.get("head", {}).get("ref", "").startswith("docs-sync/"))]
+    found_prs = [pr for page in pages for pr in page
+                if marker(ref) in (pr.get("body") or "")
+                or (pr.get("title") == "Docs sync: print-handy@" + ref
+                    and pr.get("head", {}).get("ref", "").startswith("docs-sync/"))]
+    found = [pr["number"] for pr in found_prs
+             if pr.get("head", {}).get("repo", {}).get("full_name") == repo
+             and pr.get("head", {}).get("ref", "").startswith("docs-sync/")
+             and all(part and part not in (".", "..") for part in pr.get("head", {}).get("ref", "").split("/"))
+             and all(ch.isalnum() or ch in "._/-" for ch in pr.get("head", {}).get("ref", ""))]
     if found:
         if show_branch:
             matches = [pr for page in pages for pr in page if pr.get("number") in found]
