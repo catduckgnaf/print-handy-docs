@@ -11,8 +11,39 @@ on:
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
 
 jobs:
+  docs-sync-approval:
+    name: docs-sync-approval
+    if: startsWith(github.head_ref, 'docs-sync/')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Require exact-head duckcatgnaf approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          REVIEWS="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER/reviews")" \
+            python3 - "$HEAD_SHA" <<'PY'
+          import json, os, sys
+          head = sys.argv[1]
+          reviews = json.loads(os.environ["REVIEWS"])
+          approvals = [r for r in reviews
+                       if r.get("user", {}).get("login", "").lower() == "duckcatgnaf"
+                       and r.get("commit_id") == head]
+          latest = max(approvals, key=lambda r: r.get("submitted_at", ""), default=None)
+          if latest is None or latest.get("state") != "APPROVED":
+              state = latest.get("state") if latest else "no review"
+              raise SystemExit(f"Latest duckcatgnaf review on exact PR head {head}: {state}; APPROVED required")
+          print(f"duckcatgnaf approved exact PR head {head}")
+          PY
   build:
     name: Build documentation
     runs-on: ubuntu-latest
@@ -24,8 +55,19 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - name: Test sync PR deduplication
+      - name: Test sync PR validation
         run: python3 -m unittest discover -s tests -v
+      - name: Validate wiki decisions for changed guides
+        if: startsWith(github.head_ref, 'docs-sync/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh issue view 61 --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/issue-61-body.md"
+          mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\\.md$/ { name=$NF; sub(/\\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
+          python3 scripts/validate-wiki-decisions.py --issue-body "$RUNNER_TEMP/issue-61-body.md" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
         if: startsWith(github.head_ref, 'docs-sync/') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash

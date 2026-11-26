@@ -31,7 +31,8 @@ readers at guides and may summarise them, so a changed guide can make a
 wiki page stale.
 
 For **each** changed or added guide, record exactly one decision —
-`wiki-updated` or `wiki-not-needed` — next to the page:
+`wiki-updated` (include the wiki page URL or revision as evidence) or
+`wiki-not-needed` — next to the page. Mark the checklist item complete and replace the placeholder with the decision. The automated sync PR check validates these explicit entries; it does not make the decision for you.
 
 <!-- The workflow generates one checklist line per drifted page. -->
 WIKI_CHECKLIST

@@ -73,7 +73,7 @@ jobs:
           for line in drift_lines:
               m = re.match(r"(?:CHANGED|ADDED|REMOVED|MISSING-SITE-COPY): (\S+)", line)
               if m:
-                  checklist.append(f"- [ ] `{m.group(1)}` — wiki decision: **wiki-updated / wiki-not-needed** (record one)")
+                  checklist.append(f"- [ ] `{m.group(1)}` — wiki decision: `wiki-updated` — <wiki page URL or revision> OR `wiki-not-needed`")
           template = pathlib.Path(".github/docs-sync-issue-template.md").read_text()
           body = template.replace("DRIFT_REPORT", "\n".join(f"- `{l}`" for l in drift_lines) or "(see workflow run)")
           body = body.replace("WIKI_CHECKLIST", "\n".join(checklist) or "(no pages parsed — see workflow run)")
