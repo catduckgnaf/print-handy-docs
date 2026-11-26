@@ -14,9 +14,12 @@ name: Docs auto-sync
 #   DOCS_SYNC_TOKEN secret is configured there; client_payload.ref
 #   carries the release tag.
 #
-# With no ref from either trigger, the latest published release tag is
-# used. If a sync PR for the ref is already open, its branch is updated
-# instead of opening a duplicate. If the site already matches the ref,
+# - schedule: sync upstream main daily as a fallback for missed dispatches.
+# - repository_dispatch "print-handy-main": sync the ref in the payload.
+#
+# With no ref from a manual or release trigger, the latest published release
+# tag is used. Scheduled runs use main. Existing moving-ref sync PR branches
+# are updated with fast-forward pushes; other runs use unique branches. If the site matches the ref,
 # the run ends as a clean no-op with no PR.
 #
 # This does not replace the Docs sync check or its "Docs sync needed"
@@ -32,11 +35,14 @@ on:
         required: false
         default: ""
   repository_dispatch:
-    types: [print-handy-release]
+    types: [print-handy-release, print-handy-main]
+  schedule:
+    - cron: '47 7 * * *'
 
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: docs-auto-sync
@@ -50,6 +56,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       INPUT_REF: ${{ inputs.ref }}
       PAYLOAD_REF: ${{ github.event.client_payload.ref }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
     steps:
       - name: Checkout this docs repo
         uses: actions/checkout@v4
@@ -60,7 +67,11 @@ jobs:
           set -euo pipefail
           ref="${INPUT_REF:-$PAYLOAD_REF}"
           if [ -z "$ref" ]; then
-            ref="$(gh api repos/catduckgnaf/print-handy/releases/latest --jq .tag_name)"
+            if [ "${{ github.event_name }}" = schedule ]; then
+              ref=main
+            else
+              ref="$(gh api repos/catduckgnaf/print-handy/releases/latest --jq .tag_name)"
+            fi
           fi
           [[ "$ref" =~ ^[A-Za-z0-9._/-]+$ ]] || {
             echo "Ref contains unexpected characters: $ref" >&2
@@ -69,8 +80,14 @@ jobs:
           slug="$(printf '%s' "$ref" | tr '/' '-')"
           {
             echo "ref=$ref"
-            echo "branch=docs-sync/$slug"
+            echo "branch=docs-sync/$slug-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           } >> "$GITHUB_OUTPUT"
+          set +e
+          existing_branch="$(python3 scripts/has-sync-pr.py --branch "$ref")"
+          status=$?
+          set -e
+          [ "$status" -eq 0 ] || [ "$status" -eq 1 ] || exit "$status"
+          echo "existing_branch=$existing_branch" >> "$GITHUB_OUTPUT"
           echo "Syncing docs from catduckgnaf/print-handy@$ref"
 
       - name: Checkout upstream Print Handy at the ref
@@ -84,10 +101,26 @@ jobs:
 
       - name: Apply the sync
         id: sync
+        env:
+          EXISTING_BRANCH: ${{ steps.ref.outputs.existing_branch }}
         run: |
           set -euo pipefail
-          git switch -C "${{ steps.ref.outputs.branch }}"
-          python3 scripts/sync-docs.py --upstream "$RUNNER_TEMP/print-handy-upstream" | tee "$RUNNER_TEMP/sync-report.txt"
+          existing_branch="${EXISTING_BRANCH:-}"
+          if [ -n "$existing_branch" ]; then
+            [[ "$existing_branch" =~ ^docs-sync/[A-Za-z0-9._/-]+$ ]] || { echo "Unsafe sync branch: $existing_branch" >&2; exit 1; }
+            git fetch origin "$existing_branch"
+            git switch -C "$existing_branch" FETCH_HEAD
+          else
+            git switch -C "${{ steps.ref.outputs.branch }}"
+          fi
+          set +e
+          python3 scripts/sync-docs.py --upstream "$RUNNER_TEMP/print-handy-upstream" 2>&1 | tee "$RUNNER_TEMP/sync-report.txt"
+          statuses=("${PIPESTATUS[@]}")
+          status=${statuses[0]}
+          if [ "${statuses[1]}" -ne 0 ]; then
+            status=${statuses[1]}
+          fi
+          set -e
           {
             echo "## Docs auto-sync — print-handy@${{ steps.ref.outputs.ref }}"
             echo ""
@@ -95,6 +128,10 @@ jobs:
             cat "$RUNNER_TEMP/sync-report.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "Sync stopped; review the report above before publishing." >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
           if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No drift at this ref — clean no-op, no PR opened." >> "$GITHUB_STEP_SUMMARY"
@@ -110,18 +147,33 @@ jobs:
           npm ci
           npm run docs:build
 
-      - name: Commit, push and open or update the sync PR
+      - name: Commit, push and open the sync PR
         if: steps.sync.outputs.changed == 'true'
+        env:
+          SYNC_REF: ${{ steps.ref.outputs.ref }}
+          NEW_BRANCH: ${{ steps.ref.outputs.branch }}
+          EXISTING_BRANCH: ${{ steps.ref.outputs.existing_branch }}
         run: |
           set -euo pipefail
-          ref="${{ steps.ref.outputs.ref }}"
-          branch="${{ steps.ref.outputs.branch }}"
+          ref="$SYNC_REF"
+          branch="${EXISTING_BRANCH:-}"
+          [ -n "$branch" ] || branch="$NEW_BRANCH"
+          [[ "$branch" =~ ^docs-sync/[A-Za-z0-9._/-]+$ ]] || { echo "Unsafe sync branch: $branch" >&2; exit 1; }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$RUNNER_TEMP/print-handy-upstream" rev-parse HEAD > .docs-sync-upstream-sha
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
-          git push --force-with-lease origin "$branch"
+          git push origin HEAD:"$branch"
+          sync_sha="$(git rev-parse HEAD)"
+          gh workflow run docs-pr-check.yml --repo "$GITHUB_REPOSITORY" --ref "$branch" \
+            -f "sha=$sync_sha"
+          if [ -n "${{ steps.ref.outputs.existing_branch }}" ]; then
+            echo "Updated the existing sync PR branch $branch with a normal fast-forward push."
+            exit 0
+          fi
           {
+            python3 scripts/has-sync-pr.py --marker "$ref"
             echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
             echo ""
             echo '```'
@@ -131,16 +183,10 @@ jobs:
             echo "Verified before opening: \`scripts/check-sync.sh\` reports NO DRIFT against that ref and \`npm run docs:build\` passes."
             echo ""
             echo "Notes for the reviewer:"
-            echo "- Merging this PR publishes: the Deploy workflow rebuilds the GitHub Pages site from \`main\`."
-            echo "- New guides (ADDED lines) got a sidebar entry in the Guide section with a title taken from the guide's first heading — both are defaults; move or rename them here if another section fits better."
+            echo "- Pages deployment after merge requires a correctly scoped credential or an explicit dispatch; this is not configured yet."
+            echo "- New or removed guides stop the sync before any file changes and require manual review."
+            echo "- Pages deployment after a bot-created merge is not yet configured; this PR must remain draft until the required gates are implemented."
             echo "- The per-page **wiki decisions** are still required before this sync counts as closed out: they are recorded on the 'Docs sync needed' issue (see README.md, \"The wiki decision\"). This PR does not replace them."
           } > pr-body.md
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
-          if [ -n "$existing" ]; then
-            gh pr comment "$existing" --repo "$GITHUB_REPOSITORY" \
-              --body "Updated by a re-run of the Docs auto-sync for print-handy@$ref (run $GITHUB_RUN_ID): the branch now carries the latest sync for that ref."
-            echo "Updated existing sync PR #$existing."
-          else
-            gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" \
-              --title "Docs sync: print-handy@$ref" --body-file pr-body.md
-          fi
+          gh pr create --draft --repo "$GITHUB_REPOSITORY" --head "$branch" \
+            --title "Docs sync: print-handy@$ref" --body-file pr-body.md

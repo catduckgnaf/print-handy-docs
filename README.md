@@ -92,12 +92,13 @@ unimplemented work; the site publishes shipped guides), `RELEASE-NOTES.md`,
 
 The **Docs auto-sync** workflow (`.github/workflows/docs-auto-sync.yml`)
 automates steps 1–5 above for a given Print Handy ref:
-`scripts/sync-docs.py` regenerates the site copies from upstream
-(including publishing newly added guides and removing deleted ones),
-verifies the result with `scripts/check-sync.sh` and a site build, and
-opens a PR with the diff — or updates the still-open sync PR for that
-ref. Nothing publishes until the PR is merged; the Deploy workflow then
-rebuilds the site from `main` as usual.
+`scripts/sync-docs.py` regenerates the site copies from upstream when
+only known guides have changed, verifies the result with
+`scripts/check-sync.sh` and a site build, and opens a PR with the diff —
+or updates the still-open sync PR for that ref. Newly added or removed
+guides stop before any site files are changed and require human review;
+they are never auto-published. Nothing publishes until the PR is merged;
+the Deploy workflow then rebuilds the site from `main` as usual.
 
 Run it by hand from the Actions tab with an explicit ref (a release tag
 such as `2.1.6`, a branch or a SHA; blank means the latest release tag).

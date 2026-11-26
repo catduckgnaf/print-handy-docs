@@ -1,0 +1,46 @@
+name: Documentation PR checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Exact sync PR head SHA to validate (optional; defaults to this branch)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.event.client_payload.sha || github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Test sync PR deduplication
+        run: python3 -m unittest discover -s tests -v
+      - name: Check sync PR against its recorded upstream commit
+        if: startsWith(github.head_ref, 'docs-sync/') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f .docs-sync-upstream-sha ]; then
+            echo "Legacy sync branch has no recorded upstream SHA; drift validation is unavailable. Human review is required; this compatibility path does not authorize merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          sha="$(cat .docs-sync-upstream-sha)"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          git clone --filter=blob:none --no-checkout https://github.com/catduckgnaf/print-handy.git "$RUNNER_TEMP/print-handy"
+          git -C "$RUNNER_TEMP/print-handy" fetch --depth=1 origin "$sha"
+          git -C "$RUNNER_TEMP/print-handy" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/print-handy" rev-parse HEAD)" = "$sha"
+          PRINT_HANDY_DIR="$RUNNER_TEMP/print-handy" scripts/check-sync.sh
+      - run: npm ci
+      - run: npm run docs:build
