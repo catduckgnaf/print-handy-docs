@@ -15,8 +15,10 @@ def main():
     if len(sys.argv) == 3 and sys.argv[1] == "--marker":
         print(marker(sys.argv[2]))
         return 0
-    if len(sys.argv) != 2:
+    show_branch = len(sys.argv) == 3 and sys.argv[1] == "--branch"
+    if not show_branch and len(sys.argv) != 2:
         return 2
+    ref = sys.argv[2] if show_branch else sys.argv[1]
     repo = os.environ["GITHUB_REPOSITORY"]
     result = subprocess.run(
         ["gh", "api", "--paginate", "--slurp", f"repos/{repo}/pulls?state=open&per_page=100"],
@@ -24,11 +26,19 @@ def main():
     )
     pages = json.loads(result.stdout)
     found = [pr["number"] for page in pages for pr in page
-             if marker(sys.argv[1]) in (pr.get("body") or "")
-             or (pr.get("title") == "Docs sync: print-handy@" + sys.argv[1]
+             if marker(ref) in (pr.get("body") or "")
+             or (pr.get("title") == "Docs sync: print-handy@" + ref
                  and pr.get("head", {}).get("ref", "").startswith("docs-sync/"))]
     if found:
-        print("Existing sync PR(s): " + ", ".join(map(str, found)))
+        if show_branch:
+            matches = [pr for page in pages for pr in page if pr.get("number") in found]
+            branches = sorted({pr.get("head", {}).get("ref", "") for pr in matches})
+            if len(branches) != 1 or not branches[0]:
+                print("Cannot safely select one existing sync branch", file=sys.stderr)
+                return 2
+            print(branches[0])
+        else:
+            print("Existing sync PR(s): " + ", ".join(map(str, found)))
         return 0
     return 1
 

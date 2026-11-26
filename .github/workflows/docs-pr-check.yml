@@ -23,6 +23,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -f .docs-sync-upstream-sha ]; then
+            echo "Legacy sync branch has no recorded upstream SHA; drift validation is unavailable. Human review is required; this compatibility path does not authorize merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           sha="$(cat .docs-sync-upstream-sha)"
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           git clone --filter=blob:none --no-checkout https://github.com/catduckgnaf/print-handy.git "$RUNNER_TEMP/print-handy"

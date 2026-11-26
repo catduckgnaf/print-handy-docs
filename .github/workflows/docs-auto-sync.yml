@@ -18,8 +18,8 @@ name: Docs auto-sync
 # - repository_dispatch "print-handy-main": sync the ref in the payload.
 #
 # With no ref from a manual or release trigger, the latest published release
-# tag is used. Scheduled runs use main. Each run uses a new branch;
-# existing sync branches are never overwritten. If the site already matches the ref,
+# tag is used. Scheduled runs use main. Existing moving-ref sync PR branches
+# are updated with fast-forward pushes; other runs use unique branches. If the site matches the ref,
 # the run ends as a clean no-op with no PR.
 #
 # This does not replace the Docs sync check or its "Docs sync needed"
@@ -80,6 +80,12 @@ jobs:
             echo "ref=$ref"
             echo "branch=docs-sync/$slug-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           } >> "$GITHUB_OUTPUT"
+          set +e
+          existing_branch="$(python3 scripts/has-sync-pr.py --branch "$ref")"
+          status=$?
+          set -e
+          [ "$status" -eq 0 ] || [ "$status" -eq 1 ] || exit "$status"
+          echo "existing_branch=$existing_branch" >> "$GITHUB_OUTPUT"
           echo "Syncing docs from catduckgnaf/print-handy@$ref"
 
       - name: Checkout upstream Print Handy at the ref
@@ -95,7 +101,13 @@ jobs:
         id: sync
         run: |
           set -euo pipefail
-          git switch -C "${{ steps.ref.outputs.branch }}"
+          existing_branch="${{ steps.ref.outputs.existing_branch }}"
+          if [ -n "$existing_branch" ]; then
+            git fetch origin "$existing_branch"
+            git switch -C "$existing_branch" FETCH_HEAD
+          else
+            git switch -C "${{ steps.ref.outputs.branch }}"
+          fi
           set +e
           python3 scripts/sync-docs.py --upstream "$RUNNER_TEMP/print-handy-upstream" 2>&1 | tee "$RUNNER_TEMP/sync-report.txt"
           statuses=("${PIPESTATUS[@]}")
@@ -136,21 +148,14 @@ jobs:
           set -euo pipefail
           ref="${{ steps.ref.outputs.ref }}"
           branch="${{ steps.ref.outputs.branch }}"
-          # This workflow is serialized across all triggers. Check the stable
-          # ref marker before pushing so repeat runs cannot create duplicate PRs.
-          if python3 scripts/has-sync-pr.py "$ref"; then
-            echo "An open sync PR already exists for $ref; leaving it unchanged."
-            exit 0
-          else
-            status=$?
-            [ "$status" -eq 1 ] || exit "$status"
-          fi
+          branch="${{ steps.ref.outputs.existing_branch }}"
+          [ -n "$branch" ] || branch="${{ steps.ref.outputs.branch }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$RUNNER_TEMP/print-handy-upstream" rev-parse HEAD > .docs-sync-upstream-sha
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
-          git push origin "$branch"
+          git push origin HEAD:"$branch"
           {
             python3 scripts/has-sync-pr.py --marker "$ref"
             echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."

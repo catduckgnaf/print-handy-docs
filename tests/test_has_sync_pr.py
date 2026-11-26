@@ -33,6 +33,17 @@ class ExistingSyncPRTest(unittest.TestCase):
         pr = {"number": 8, "body": "old", "title": "Docs sync: print-handy@main", "head": {"ref": "docs-sync/main-123"}}
         self.assertEqual(self.run_query([[pr]]).returncode, 0)
 
+    def test_existing_moving_ref_returns_branch_for_update(self):
+        pr = {"number": 8, "body": "old", "title": "Docs sync: print-handy@main", "head": {"ref": "docs-sync/main"}}
+        with tempfile.TemporaryDirectory() as directory:
+            gh = Path(directory) / "gh"
+            gh.write_text("#!/usr/bin/env python3\nimport sys\nprint(" + repr(json.dumps([[pr]])) + ")\n")
+            gh.chmod(0o755)
+            env = dict(os.environ, GITHUB_REPOSITORY="owner/docs", PATH=directory + ":" + os.environ["PATH"])
+            result = subprocess.run([sys.executable, str(SCRIPT), "--branch", "main"], env=env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "docs-sync/main")
+
     def test_api_failure_does_not_allow_creation(self):
         self.assertNotIn(self.run_query([], exit_code=2).returncode, (0, 1))
 
