@@ -2,6 +2,8 @@ name: Documentation PR checks
 
 on:
   pull_request:
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
     inputs:
       sha:
@@ -17,7 +19,7 @@ permissions:
 jobs:
   docs-sync-approval:
     name: docs-sync-approval
-    if: startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
+    if: startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -35,10 +37,10 @@ jobs:
           import json, os, sys
           head = sys.argv[1]
           reviews = json.loads(os.environ["REVIEWS"])
-          approvals = [r for r in reviews
-                       if r.get("user", {}).get("login", "").lower() == "duckcatgnaf"
-                       and r.get("commit_id") == head]
-          latest = max(approvals, key=lambda r: r.get("submitted_at", ""), default=None)
+          exact_head_reviews = [r for r in reviews
+                                if r.get("user", {}).get("login", "").lower() == "duckcatgnaf"
+                                and r.get("commit_id") == head]
+          latest = max(exact_head_reviews, key=lambda r: r.get("submitted_at", ""), default=None)
           if latest is None or latest.get("state") != "APPROVED":
               state = latest.get("state") if latest else "no review"
               raise SystemExit(f"Latest duckcatgnaf review on exact PR head {head}: {state}; APPROVED required")
@@ -58,7 +60,7 @@ jobs:
       - name: Test sync PR validation
         run: python3 -m unittest discover -s tests -v
       - name: Validate wiki decisions for changed guides
-        if: startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
+        if: startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
