@@ -21,21 +21,8 @@ synced), applying the site's established transformations:
   autolinks are left alone,
 - the manifest's SHA-256 column is updated to the upstream file's hash.
 
-It also handles the two structural cases the manual process handles:
-
-- ADDED: an upstream guide that is neither in the manifest nor on the
-  exclude list in scripts/check-sync.sh is published: site copy created,
-  manifest row appended, and a sidebar entry added to the "Guide"
-  section of docs/.vitepress/config.mjs titled from the guide's first
-  heading. The placement and title are defaults for a human reviewer to
-  adjust in the sync PR — what automation guarantees is that the guide
-  is published and reachable, not hidden.
-- REMOVED: a manifest guide whose upstream file is gone loses its site
-  copy, its manifest row and its sidebar entry, and links to it in the
-  hand-maintained home page (docs/index.md) are reduced to plain text.
-  (Links in synced pages are regenerated from upstream each run, so a
-  link to a removed guide becomes the GitHub URL automatically if the
-  upstream source still has it.)
+Structural changes are not applied automatically. Added and removed guides
+are reported for manual review, and the program exits without modifying files.
 
 Usage:
   scripts/sync-docs.py --upstream /path/to/print-handy-checkout
@@ -248,6 +235,17 @@ def main():
 
     excludes = load_excludes()
     header, rows = load_manifest()
+    known = {row[0] for row in rows}
+    added = sorted(path.name for path in upstream_docs.glob("*.md")
+                   if path.name not in known and path.name not in excludes)
+    removed = sorted(name for name in known if not (upstream_docs / name).is_file())
+    if added or removed:
+        for name in added:
+            print(f"ADDED: {name} — review required; not published")
+        for name in removed:
+            print(f"REMOVED: {name} — review required; site copy retained")
+        print("Structural changes require manual review; no files changed.", file=sys.stderr)
+        return 2
     # Only guides that still exist upstream belong in the link map, so a
     # link to a guide removed by this very sync becomes its GitHub URL
     # instead of a site link to a page that is about to disappear.
