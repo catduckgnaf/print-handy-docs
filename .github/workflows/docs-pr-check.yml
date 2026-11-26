@@ -66,8 +66,12 @@ jobs:
         run: |
           set -euo pipefail
           gh issue view 61 --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/issue-61-body.md"
-          mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\\.md$/ { name=$NF; sub(/\\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
-          python3 scripts/validate-wiki-decisions.py --issue-body "$RUNNER_TEMP/issue-61-body.md" --guides "${guides[@]}"
+          mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ { name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
+          if [ "${#guides[@]}" -eq 0 ]; then
+            echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2
+            exit 1
+          fi
+          python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/issue-61-body.md" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
         if: startsWith(github.head_ref, 'docs-sync/') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
