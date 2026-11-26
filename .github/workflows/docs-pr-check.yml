@@ -67,11 +67,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
+          # The issue body is the human-maintained source of decisions. Sync
+          # comments may contain regenerated unchecked checklists and must not
+          # override completed decisions recorded in the body.
           gh issue view 61 --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/issue-61-body.md"
-          gh api --paginate --slurp "repos/$GH_REPO/issues/61/comments" | jq '[.[][] | .body] | map(select(contains("wiki decision:"))) | last // empty' -r > "$RUNNER_TEMP/issue-61-latest-checklist.md"
-          if [ -s "$RUNNER_TEMP/issue-61-latest-checklist.md" ]; then
-            cp "$RUNNER_TEMP/issue-61-latest-checklist.md" "$RUNNER_TEMP/issue-61-body.md"
-          fi
           mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ { name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
           if [ "${#guides[@]}" -eq 0 ]; then
             echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2
