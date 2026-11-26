@@ -18,5 +18,17 @@ jobs:
           cache: npm
       - name: Test sync PR deduplication
         run: python3 -m unittest discover -s tests -v
+      - name: Check sync PR against its recorded upstream commit
+        if: startsWith(github.head_ref, 'docs-sync/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(cat .docs-sync-upstream-sha)"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          git clone --filter=blob:none --no-checkout https://github.com/catduckgnaf/print-handy.git "$RUNNER_TEMP/print-handy"
+          git -C "$RUNNER_TEMP/print-handy" fetch --depth=1 origin "$sha"
+          git -C "$RUNNER_TEMP/print-handy" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/print-handy" rev-parse HEAD)" = "$sha"
+          PRINT_HANDY_DIR="$RUNNER_TEMP/print-handy" scripts/check-sync.sh
       - run: npm ci
       - run: npm run docs:build

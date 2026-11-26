@@ -96,7 +96,14 @@ jobs:
         run: |
           set -euo pipefail
           git switch -C "${{ steps.ref.outputs.branch }}"
-          python3 scripts/sync-docs.py --upstream "$RUNNER_TEMP/print-handy-upstream" | tee "$RUNNER_TEMP/sync-report.txt"
+          set +e
+          python3 scripts/sync-docs.py --upstream "$RUNNER_TEMP/print-handy-upstream" 2>&1 | tee "$RUNNER_TEMP/sync-report.txt"
+          statuses=("${PIPESTATUS[@]}")
+          status=${statuses[0]}
+          if [ "${statuses[1]}" -ne 0 ]; then
+            status=${statuses[1]}
+          fi
+          set -e
           {
             echo "## Docs auto-sync — print-handy@${{ steps.ref.outputs.ref }}"
             echo ""
@@ -104,6 +111,10 @@ jobs:
             cat "$RUNNER_TEMP/sync-report.txt"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "Sync stopped; review the report above before publishing." >> "$GITHUB_STEP_SUMMARY"
+            exit "$status"
+          fi
           if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No drift at this ref — clean no-op, no PR opened." >> "$GITHUB_STEP_SUMMARY"
@@ -136,6 +147,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$RUNNER_TEMP/print-handy-upstream" rev-parse HEAD > .docs-sync-upstream-sha
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
           git push origin "$branch"
