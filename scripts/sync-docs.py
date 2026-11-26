@@ -35,6 +35,7 @@ and opening the PR is the caller's job (see
 """
 
 import argparse
+import fnmatch
 import hashlib
 import posixpath
 import re
@@ -71,6 +72,11 @@ def load_excludes():
     if not match:
         raise SystemExit(f"could not parse EXCLUDE from {CHECK_SYNC}")
     return set(match.group(1).split())
+
+
+def is_excluded(filename, patterns):
+    """Match configured exact filenames and glob patterns."""
+    return any(fnmatch.fnmatchcase(filename, pattern) for pattern in patterns)
 
 
 def load_manifest():
@@ -237,7 +243,7 @@ def main():
     header, rows = load_manifest()
     known = {row[0] for row in rows}
     added = sorted(path.name for path in upstream_docs.glob("*.md")
-                   if path.name not in known and path.name not in excludes)
+                   if path.name not in known and not is_excluded(path.name, excludes))
     removed = sorted(name for name in known if not (upstream_docs / name).is_file())
     if added or removed:
         for name in added:
@@ -261,7 +267,7 @@ def main():
     added = []
     for path in sorted(upstream_docs.glob("*.md")):
         base = path.name
-        if base in excludes or base in upstream_to_site:
+        if base in excludes or is_excluded(base, excludes) or base in upstream_to_site:
             continue
         site_name = base.lower()
         upstream_to_site[base] = site_name
