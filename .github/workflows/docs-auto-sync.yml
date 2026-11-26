@@ -119,18 +119,28 @@ jobs:
           npm ci
           npm run docs:build
 
-      - name: Commit, push and open or update the sync PR
+      - name: Commit, push and open the sync PR
         if: steps.sync.outputs.changed == 'true'
         run: |
           set -euo pipefail
           ref="${{ steps.ref.outputs.ref }}"
           branch="${{ steps.ref.outputs.branch }}"
+          # This workflow is serialized across all triggers. Check the stable
+          # ref marker before pushing so repeat runs cannot create duplicate PRs.
+          if python3 scripts/has-sync-pr.py "$ref"; then
+            echo "An open sync PR already exists for $ref; leaving it unchanged."
+            exit 0
+          else
+            status=$?
+            [ "$status" -eq 1 ] || exit "$status"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
           git push origin "$branch"
           {
+            python3 scripts/has-sync-pr.py --marker "$ref"
             echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
             echo ""
             echo '```'
@@ -145,12 +155,5 @@ jobs:
             echo "- Pages deployment after a bot-created merge is not yet configured; this PR must remain draft until the required gates are implemented."
             echo "- The per-page **wiki decisions** are still required before this sync counts as closed out: they are recorded on the 'Docs sync needed' issue (see README.md, \"The wiki decision\"). This PR does not replace them."
           } > pr-body.md
-          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$branch" --state open --json number --jq '.[0].number // empty')"
-          if [ -n "$existing" ]; then
-            gh pr comment "$existing" --repo "$GITHUB_REPOSITORY" \
-              --body "Updated by a re-run of the Docs auto-sync for print-handy@$ref (run $GITHUB_RUN_ID): the branch now carries the latest sync for that ref."
-            echo "Updated existing sync PR #$existing."
-          else
-            gh pr create --draft --repo "$GITHUB_REPOSITORY" --head "$branch" \
-              --title "Docs sync: print-handy@$ref" --body-file pr-body.md
-          fi
+          gh pr create --draft --repo "$GITHUB_REPOSITORY" --head "$branch" \
+            --title "Docs sync: print-handy@$ref" --body-file pr-body.md
