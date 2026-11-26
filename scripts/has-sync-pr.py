@@ -36,6 +36,6 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError) as exc:
+    except (subprocess.SubprocessError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Cannot safely check open sync PRs: {exc}", file=sys.stderr)
         sys.exit(2)
