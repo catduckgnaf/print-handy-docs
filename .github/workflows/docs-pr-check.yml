@@ -17,7 +17,7 @@ permissions:
 jobs:
   docs-sync-approval:
     name: docs-sync-approval
-    if: startsWith(github.head_ref, 'docs-sync/')
+    if: startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
@@ -58,7 +58,7 @@ jobs:
       - name: Test sync PR validation
         run: python3 -m unittest discover -s tests -v
       - name: Validate wiki decisions for changed guides
-        if: startsWith(github.head_ref, 'docs-sync/')
+        if: startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -77,7 +77,7 @@ jobs:
           fi
           python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/issue-61-body.md" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
-        if: startsWith(github.head_ref, 'docs-sync/') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
+        if: (startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
         run: |
           set -euo pipefail

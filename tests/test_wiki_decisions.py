@@ -27,6 +27,16 @@ class WikiDecisionValidationTests(unittest.TestCase):
         body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated` — done\n"
         self.assertTrue(any("must include a wiki page URL or revision" in error for error in validate(body, ["GUIDE.md"])))
 
+    def test_wiki_updated_rejects_malformed_urls(self):
+        for evidence in ("https://", "https://example.test", "https:///path", "https://user@example.test/wiki"):
+            with self.subTest(evidence=evidence):
+                body = f"- [x] `GUIDE.md` — wiki decision: `wiki-updated` — {evidence}\n"
+                self.assertTrue(any("must include a wiki page URL or revision" in error for error in validate(body, ["GUIDE.md"])))
+
+    def test_wiki_updated_accepts_page_url(self):
+        body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated` — https://example.test/wiki/GUIDE\n"
+        self.assertEqual([], validate(body, ["GUIDE.md"]))
+
     def test_wiki_updated_accepts_revision_evidence(self):
         body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated` — abc1234\n"
         self.assertEqual([], validate(body, ["GUIDE.md"]))

@@ -3,11 +3,26 @@
 import argparse
 import re
 import sys
+from urllib.parse import urlparse
 
 DECISION = re.compile(
     r"^- \[x\] `(?P<guide>[^`]+)` — wiki decision: `(?P<decision>wiki-updated|wiki-not-needed)`(?: — (?P<evidence>.+))?$",
     re.MULTILINE,
 )
+
+
+def valid_evidence(evidence: str) -> bool:
+    if re.fullmatch(r"[0-9a-fA-F]{7,40}", evidence):
+        return True
+    parsed = urlparse(evidence)
+    return (
+        parsed.scheme in {"http", "https"}
+        and bool(parsed.hostname)
+        and "." in parsed.hostname
+        and bool(parsed.path.strip("/"))
+        and parsed.username is None
+        and parsed.password is None
+    )
 
 
 def validate(issue_body: str, guides: list[str]) -> list[str]:
@@ -22,7 +37,7 @@ def validate(issue_body: str, guides: list[str]) -> list[str]:
         row = rows.get(guide)
         if row is None:
             errors.append(f"missing explicit checked wiki decision for {guide}")
-        elif row["decision"] == "wiki-updated" and not re.fullmatch(r"(?:https?://\S+|[0-9a-fA-F]{7,40})", row["evidence"] or ""):
+        elif row["decision"] == "wiki-updated" and not valid_evidence(row["evidence"] or ""):
             errors.append(f"wiki-updated for {guide} must include a wiki page URL or revision")
     return errors
 
