@@ -156,6 +156,10 @@ jobs:
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
           git push origin HEAD:"$branch"
+          if [ -n "${{ steps.ref.outputs.existing_branch }}" ]; then
+            echo "Updated the existing sync PR branch $branch with a normal fast-forward push."
+            exit 0
+          fi
           {
             python3 scripts/has-sync-pr.py --marker "$ref"
             echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
