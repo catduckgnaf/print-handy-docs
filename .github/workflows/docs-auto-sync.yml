@@ -42,6 +42,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: docs-auto-sync
@@ -164,6 +165,9 @@ jobs:
           git add -A
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
           git push origin HEAD:"$branch"
+          sync_sha="$(git rev-parse HEAD)"
+          gh workflow run docs-pr-check.yml --repo "$GITHUB_REPOSITORY" --ref "$branch" \
+            -f "sha=$sync_sha"
           if [ -n "${{ steps.ref.outputs.existing_branch }}" ]; then
             echo "Updated the existing sync PR branch $branch with a normal fast-forward push."
             exit 0

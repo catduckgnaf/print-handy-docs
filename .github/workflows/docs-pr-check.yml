@@ -2,6 +2,12 @@ name: Documentation PR checks
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Exact sync PR head SHA to validate (optional; defaults to this branch)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -12,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.event.client_payload.sha || github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -19,7 +27,7 @@ jobs:
       - name: Test sync PR deduplication
         run: python3 -m unittest discover -s tests -v
       - name: Check sync PR against its recorded upstream commit
-        if: startsWith(github.head_ref, 'docs-sync/')
+        if: startsWith(github.head_ref, 'docs-sync/') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
         run: |
           set -euo pipefail
