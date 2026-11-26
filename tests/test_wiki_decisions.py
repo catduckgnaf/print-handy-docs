@@ -17,20 +17,28 @@ class WikiDecisionValidationTests(unittest.TestCase):
             "- [x] `GUIDE.md` — wiki decision: **wiki-updated / wiki-not-needed** (record one)",
         ):
             with self.subTest(row=row):
-                self.assertIn("missing explicit checked wiki decision", validate(row, ["GUIDE.md"]))
+                self.assertTrue(any("missing explicit checked wiki decision" in error for error in validate(row, ["GUIDE.md"])))
 
     def test_wiki_updated_needs_evidence(self):
         body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated`\n"
-        self.assertIn("must include a wiki page URL or revision", validate(body, ["GUIDE.md"]))
+        self.assertTrue(any("must include a wiki page URL or revision" in error for error in validate(body, ["GUIDE.md"])))
+
+    def test_wiki_updated_rejects_arbitrary_evidence(self):
+        body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated` — done\n"
+        self.assertTrue(any("must include a wiki page URL or revision" in error for error in validate(body, ["GUIDE.md"])))
+
+    def test_wiki_updated_accepts_revision_evidence(self):
+        body = "- [x] `GUIDE.md` — wiki decision: `wiki-updated` — abc1234\n"
+        self.assertEqual([], validate(body, ["GUIDE.md"]))
 
     def test_rejects_duplicate_decisions(self):
         body = ("- [x] `GUIDE.md` — wiki decision: `wiki-updated` — https://example.test/rev1\n"
                 "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n")
-        self.assertIn("duplicate wiki decision", validate(body, ["GUIDE.md"]))
+        self.assertTrue(any("duplicate wiki decision" in error for error in validate(body, ["GUIDE.md"])))
 
     def test_unrelated_issue_decisions_do_not_satisfy_guide(self):
         body = "- [x] `OTHER.md` — wiki decision: `wiki-not-needed`\n"
-        self.assertIn("missing explicit checked wiki decision", validate(body, ["GUIDE.md"]))
+        self.assertTrue(any("missing explicit checked wiki decision" in error for error in validate(body, ["GUIDE.md"])))
 
 
 if __name__ == "__main__":

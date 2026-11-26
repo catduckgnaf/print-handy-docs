@@ -30,7 +30,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          REVIEWS="$(gh api "repos/$GH_REPO/pulls/$PR_NUMBER/reviews")" \
+          REVIEWS="$(gh api --paginate --slurp "repos/$GH_REPO/pulls/$PR_NUMBER/reviews" | jq 'add')" \
             python3 - "$HEAD_SHA" <<'PY'
           import json, os, sys
           head = sys.argv[1]
@@ -66,6 +66,10 @@ jobs:
         run: |
           set -euo pipefail
           gh issue view 61 --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/issue-61-body.md"
+          gh api --paginate --slurp "repos/$GH_REPO/issues/61/comments" | jq '[.[][] | .body] | map(select(contains("wiki decision:"))) | last // empty' -r > "$RUNNER_TEMP/issue-61-latest-checklist.md"
+          if [ -s "$RUNNER_TEMP/issue-61-latest-checklist.md" ]; then
+            cp "$RUNNER_TEMP/issue-61-latest-checklist.md" "$RUNNER_TEMP/issue-61-body.md"
+          fi
           mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ { name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
           if [ "${#guides[@]}" -eq 0 ]; then
             echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2

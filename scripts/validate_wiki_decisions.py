@@ -22,7 +22,7 @@ def validate(issue_body: str, guides: list[str]) -> list[str]:
         row = rows.get(guide)
         if row is None:
             errors.append(f"missing explicit checked wiki decision for {guide}")
-        elif row["decision"] == "wiki-updated" and not row["evidence"]:
+        elif row["decision"] == "wiki-updated" and not re.fullmatch(r"(?:https?://\S+|[0-9a-fA-F]{7,40})", row["evidence"] or ""):
             errors.append(f"wiki-updated for {guide} must include a wiki page URL or revision")
     return errors
 
