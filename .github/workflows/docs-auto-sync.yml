@@ -14,8 +14,11 @@ name: Docs auto-sync
 #   DOCS_SYNC_TOKEN secret is configured there; client_payload.ref
 #   carries the release tag.
 #
-# With no ref from either trigger, the latest published release tag is
-# used. If a sync PR for the ref is already open, its branch is updated
+# - schedule: sync upstream main daily as a fallback for missed dispatches.
+# - repository_dispatch "print-handy-main": sync the ref in the payload.
+#
+# With no ref from a manual or release trigger, the latest published release
+# tag is used. Scheduled runs use main. If a sync PR for the ref is already open, its branch is updated
 # instead of opening a duplicate. If the site already matches the ref,
 # the run ends as a clean no-op with no PR.
 #
@@ -32,7 +35,9 @@ on:
         required: false
         default: ""
   repository_dispatch:
-    types: [print-handy-release]
+    types: [print-handy-release, print-handy-main]
+  schedule:
+    - cron: '47 7 * * *'
 
 permissions:
   contents: write
@@ -60,7 +65,11 @@ jobs:
           set -euo pipefail
           ref="${INPUT_REF:-$PAYLOAD_REF}"
           if [ -z "$ref" ]; then
-            ref="$(gh api repos/catduckgnaf/print-handy/releases/latest --jq .tag_name)"
+            if [ "${{ github.event_name }}" = schedule ]; then
+              ref=main
+            else
+              ref="$(gh api repos/catduckgnaf/print-handy/releases/latest --jq .tag_name)"
+            fi
           fi
           [[ "$ref" =~ ^[A-Za-z0-9._/-]+$ ]] || {
             echo "Ref contains unexpected characters: $ref" >&2
