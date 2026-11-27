@@ -3,10 +3,32 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from validate_wiki_decisions import validate
+from validate_wiki_decisions import validate, validate_reviews
+
+
+def review(head, body, state="COMMENTED", association="COLLABORATOR"):
+    return {"commit_id": head, "body": body, "state": state,
+            "author_association": association, "submitted_at": "2026-01-01T00:00:00Z"}
 
 
 class WikiDecisionValidationTests(unittest.TestCase):
+    def test_review_provenance_rejects_marker_only_refresh(self):
+        old, new = 'a' * 40, 'b' * 40
+        row = '- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n'
+        forged_body = f'<!-- wiki-assessment-head: {new} -->\n' + row
+        self.assertTrue(validate_reviews([review(old, forged_body)], new, ['GUIDE.md']))
+        self.assertEqual([], validate_reviews([review(new, row)], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, state='DISMISSED')], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, association='NONE')], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, state='CHANGES_REQUESTED')], new, ['GUIDE.md']))
+
+    def test_new_cycle_needs_each_fresh_guide_decision(self):
+        old = "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n"
+        fresh = "- [ ] `GUIDE.md` — wiki decision: `wiki-updated` — <wiki page URL or revision> OR `wiki-not-needed`\n"
+        self.assertEqual([], validate(old, ["GUIDE.md"]))
+        self.assertTrue(validate(fresh, ["GUIDE.md"]))
+        self.assertTrue(validate(old, ["GUIDE.md", "OTHER.md"]))
+
     def test_only_explicit_checked_decisions_pass(self):
         body = "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n"
         self.assertEqual([], validate(body, ["GUIDE.md"]))

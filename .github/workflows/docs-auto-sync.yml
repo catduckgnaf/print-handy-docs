@@ -23,8 +23,7 @@ name: Docs auto-sync
 # the run ends as a clean no-op with no PR.
 #
 # This does not replace the Docs sync check or its "Docs sync needed"
-# issue: the per-page wiki decisions recorded there are still required
-# before a sync is considered closed out (see README.md).
+# issue: sync PRs require per-guide decisions for their exact head (see README.md).
 
 on:
   workflow_dispatch:
@@ -60,6 +59,9 @@ jobs:
     steps:
       - name: Checkout this docs repo
         uses: actions/checkout@v4
+        with:
+          # Existing sync branches may have diverged before main's tip.
+          fetch-depth: 0
 
       - name: Resolve the upstream ref
         id: ref
@@ -167,10 +169,6 @@ jobs:
           sync_sha="$(git rev-parse HEAD)"
           gh workflow run docs-pr-check.yml --repo "$GITHUB_REPOSITORY" --ref "$branch" \
             -f "sha=$sync_sha"
-          if [ -n "${{ steps.ref.outputs.existing_branch }}" ]; then
-            echo "Updated the existing sync PR branch $branch with a normal fast-forward push."
-            exit 0
-          fi
           {
             python3 scripts/has-sync-pr.py --marker "$ref"
             echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
@@ -183,8 +181,19 @@ jobs:
             echo ""
             echo "Notes for the reviewer:"
             echo "- New or removed guides stop the sync before any file changes and require manual review."
-            echo "- The per-page **wiki decisions** remain required before merging and are recorded on issue #61."
+            echo "- Review the wiki for each changed guide and submit one PR review on this exact head containing all checked decisions below. PR body edits do not count. A new sync head requires a fresh assessment review."
+            echo ""
+            changed_paths="$(git diff --name-only origin/main...HEAD)"
+            mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
+            [ -n "$mapped_guides" ] || { echo 'No mapped guides to assess' >&2; exit 1; }
+            while IFS= read -r guide; do
+              printf -- '- [ ] `%s` — wiki decision: `wiki-updated` — <wiki page URL or revision> OR `wiki-not-needed`\n' "$guide"
+            done <<< "$mapped_guides"
             echo "- The reviewed sync workflow merges only after the exact head passes build, approval and wiki checks, then dispatches Pages."
           } > pr-body.md
-          gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" \
-            --title "Docs sync: print-handy@$ref" --body-file pr-body.md
+          if [ -n "$EXISTING_BRANCH" ]; then
+            gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --body-file pr-body.md
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" \
+              --title "Docs sync: print-handy@$ref" --body-file pr-body.md
+          fi
