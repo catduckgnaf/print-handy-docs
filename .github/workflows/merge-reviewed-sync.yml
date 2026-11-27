@@ -75,7 +75,10 @@ jobs:
             continue
           fi
           gh issue view 61 --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
-          mapfile -t guides < <(gh pr diff "$number" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ {name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md"}' | sort -u)
+          changed_paths="$(gh pr diff "$number" --name-only)"
+          # Fail closed for a changed guide with no unique manifest mapping.
+          mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
+          mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
           [ "${#guides[@]}" -gt 0 ] || { echo 'No guide changes to validate; refusing merge.' >&2; exit 1; }
           if ! python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --guides "${guides[@]}"; then continue; fi
           # GitHub enforces rulesets and checks; the head match prevents racing a new push.

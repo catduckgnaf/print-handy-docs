@@ -72,7 +72,9 @@ jobs:
           # comments may contain regenerated unchecked checklists and must not
           # override completed decisions recorded in the body.
           gh issue view 61 --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/issue-61-body.md"
-          mapfile -t guides < <(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ { name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md" }' | sort -u)
+          changed_paths="$(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only)"
+          mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
+          mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
           if [ "${#guides[@]}" -eq 0 ]; then
             echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2
             exit 1
