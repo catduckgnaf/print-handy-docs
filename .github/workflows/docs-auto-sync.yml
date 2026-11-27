@@ -183,10 +183,9 @@ jobs:
             echo "Verified before opening: \`scripts/check-sync.sh\` reports NO DRIFT against that ref and \`npm run docs:build\` passes."
             echo ""
             echo "Notes for the reviewer:"
-            echo "- Pages deployment after merge requires a correctly scoped credential or an explicit dispatch; this is not configured yet."
             echo "- New or removed guides stop the sync before any file changes and require manual review."
-            echo "- Pages deployment after a bot-created merge is not yet configured; this PR must remain draft until the required gates are implemented."
-            echo "- The per-page **wiki decisions** are still required before this sync counts as closed out: they are recorded on the 'Docs sync needed' issue (see README.md, \"The wiki decision\"). This PR does not replace them."
+            echo "- The per-page **wiki decisions** remain required before merging and are recorded on issue #61."
+            echo "- The reviewed sync workflow merges only after the exact head passes build, approval and wiki checks, then dispatches Pages."
           } > pr-body.md
-          gh pr create --draft --repo "$GITHUB_REPOSITORY" --head "$branch" \
+          gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" \
             --title "Docs sync: print-handy@$ref" --body-file pr-body.md

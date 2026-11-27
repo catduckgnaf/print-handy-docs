@@ -1,0 +1,68 @@
+name: Merge reviewed documentation sync
+
+on:
+  workflow_run:
+    workflows: [Documentation PR checks]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  checks: read
+  actions: write
+
+concurrency:
+  group: reviewed-docs-sync
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      CHECKED_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge only the reviewed and validated sync head
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CHECKED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          prs="$(gh pr list --state open --limit 100 --json number,headRefName,headRefOid,isDraft,author --jq '[.[] | select(.headRefOid == env.CHECKED_SHA and (.headRefName | startswith("docs-sync/")) and .author.login == "github-actions[bot]" and .isDraft == false)]')"
+          if [ "$(jq length <<<"$prs")" -ne 1 ]; then
+            echo 'No unique ready bot sync PR for this checked head; nothing to merge.'
+            exit 0
+          fi
+          number="$(jq -r '.[0].number' <<<"$prs")"
+          # The exact-head gate and build must both have succeeded on this SHA.
+          checks="$(gh api --paginate --slurp "repos/$GH_REPO/commits/$CHECKED_SHA/check-runs?per_page=100" | jq '[.[].check_runs[]]')"
+          for name in 'Build documentation' 'docs-sync-approval'; do
+            result="$(jq -r --arg n "$name" '[.[] | select(.name == $n)] | sort_by(.started_at) | last | if . then .conclusion // "pending" else "missing" end' <<<"$checks")"
+            if [ "$result" != success ]; then
+              echo "$name on $CHECKED_SHA is $result; no merge."
+              exit 0
+            fi
+          done
+          # Defend against a newer review that supersedes a previously passing check.
+          reviews="$(gh api --paginate --slurp "repos/$GH_REPO/pulls/$number/reviews?per_page=100" | jq 'add')"
+          result="$(jq -r --arg sha "$CHECKED_SHA" '[.[] | select((.user.login | ascii_downcase) == "duckcatgnaf" and .commit_id == $sha)] | sort_by(.submitted_at) | last | .state // "MISSING"' <<<"$reviews")"
+          [ "$result" = APPROVED ] || { echo "Exact-head review is $result; no merge."; exit 0; }
+          # Do not merge over unresolved conversations, even if rulesets do not enforce them.
+          threads="$(gh api graphql --paginate -f query='query($owner:String!, $name:String!, $number:Int!, $endCursor:String) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { reviewThreads(first:100, after:$endCursor) { nodes { isResolved } pageInfo { hasNextPage endCursor } } } } }' -f owner="${GH_REPO%/*}" -f name="${GH_REPO#*/}" -F number="$number")"
+          if jq -se '[.[].data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length > 0' <<<"$threads" >/dev/null; then
+            echo 'Unresolved review conversations; no merge.'
+            exit 0
+          fi
+          gh issue view 61 --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
+          mapfile -t guides < <(gh pr diff "$number" --name-only | awk -F/ '$1 == "docs" && $NF ~ /\.md$/ {name=$NF; sub(/\.md$/, "", name); print toupper(name) ".md"}' | sort -u)
+          [ "${#guides[@]}" -gt 0 ] || { echo 'No guide changes to validate; refusing merge.' >&2; exit 1; }
+          python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --guides "${guides[@]}"
+          # GitHub enforces rulesets and checks; the head match prevents racing a new push.
+          gh pr merge "$number" --squash --match-head-commit "$CHECKED_SHA"
+          # GITHUB_TOKEN merges do not trigger a push workflow. Explicitly dispatch
+          # deployment from protected main instead, and fail visibly if dispatch fails.
+          gh workflow run deploy-pages.yml --ref main
