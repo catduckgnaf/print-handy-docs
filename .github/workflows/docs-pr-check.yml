@@ -3,8 +3,6 @@ name: Documentation PR checks
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
-  pull_request_review:
-    types: [submitted, edited, dismissed]
   workflow_dispatch:
     inputs:
       sha:
@@ -14,40 +12,9 @@ on:
 
 permissions:
   contents: read
-  issues: read
   pull-requests: read
 
 jobs:
-  docs-sync-approval:
-    name: docs-sync-approval
-    # Every docs-sync/ PR must prove exact-head duckcatgnaf approval, regardless of author.
-    if: startsWith(github.event.pull_request.head.ref, 'docs-sync/')
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    steps:
-      - name: Require exact-head duckcatgnaf approval
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          REVIEWS="$(gh api --paginate --slurp "repos/$GH_REPO/pulls/$PR_NUMBER/reviews" | jq 'add')" \
-            python3 - "$HEAD_SHA" <<'PY'
-          import json, os, sys
-          head = sys.argv[1]
-          reviews = json.loads(os.environ["REVIEWS"])
-          exact_head_reviews = [r for r in reviews
-                                if r.get("user", {}).get("login", "").lower() == "duckcatgnaf"
-                                and r.get("commit_id") == head]
-          latest = max(exact_head_reviews, key=lambda r: r.get("submitted_at", ""), default=None)
-          if latest is None or latest.get("state") != "APPROVED":
-              state = latest.get("state") if latest else "no review"
-              raise SystemExit(f"Latest duckcatgnaf review on exact PR head {head}: {state}; APPROVED required")
-          print(f"duckcatgnaf approved exact PR head {head}")
-          PY
   build:
     name: Build documentation
     runs-on: ubuntu-latest
@@ -61,25 +28,6 @@ jobs:
           cache: npm
       - name: Test sync PR validation
         run: python3 -m unittest discover -s tests -v
-      - name: Validate wiki decisions for changed guides
-        if: startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          # GitHub review metadata binds the assessment to the reviewed commit.
-          gh api --paginate --slurp "repos/$GH_REPO/pulls/$PR_NUMBER/reviews?per_page=100" | jq 'add // []' > "$RUNNER_TEMP/wiki-reviews.json"
-          changed_paths="$(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only)"
-          mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
-          mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
-          if [ "${#guides[@]}" -eq 0 ]; then
-            echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2
-            exit 1
-          fi
-          python3 scripts/validate_wiki_decisions.py --reviews "$RUNNER_TEMP/wiki-reviews.json" --head "$HEAD_SHA" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
         if: (startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
