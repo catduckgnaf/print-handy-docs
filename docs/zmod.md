@@ -529,17 +529,6 @@ place:
   record, a lane linked to an archived or deleted spool, and a
   material identity mismatch are named prompts. Nothing is
   silently overwritten in either direction.
-- One exception (#1885): an unlocked lane linked to an archived or
-  deleted spool, in a slot where exactly one live spool claims the
-  slot through `ph_slot`, is relinked to that spool by the watcher
-  and nothing is posted. HelixScreen keeps its own copy of each lane
-  and writes it back on a later screen command (`CHANGE_ZCOLOR`, or
-  the `SET_ZCOLOR` a print starts with), after Print Handy's bind
-  already read the link back, so a relink did not stick. A stale
-  link the watcher cannot relink is posted once per slot, spool and
-  recorded spool, not on every rewrite. A Delete picked for a
-  replaced spool runs after the lane is relinked; when a lane still
-  names that spool, it is archived instead and the reply says why.
 - A lane the screen exposes only by material and color (no
   Spoolman id) is named as unresolved. No spool is guessed or
   bound.
@@ -566,18 +555,7 @@ place:
   as needing attention, never converged: on 2026-11-14 a Web UI
   swap on an AD5X left the old records in place, the screen
   recolored them on the next push, and the watcher moved the
-  swapped spool back. That notice keeps Print Handy's record and
-  says so (#1886): `/spool sync` rewrites the screen lane to the
-  recorded spool, and on Discord the notice carries three buttons,
-  **Keep spool N** (the same lane rewrite, for that slot),
-  **Move spool M here** (asks once, then empties the other slot and
-  binds the spool into this one, the replaced spool to the shelf;
-  inventory only; it re-checks that this slot still holds the spool,
-  or still holds nothing, that the notice saw, and refuses when the
-  notice could not tell) and **Pick another** (the shelf picker). It is
-  posted once per slot, spool, other slot and recorded spool, so
-  HelixScreen writing the record back after a restart does not
-  post it again.
+  swapped spool back.
 - Double counting: there is exactly one charger (above). Two
   writers can move its pointer; Print Handy at a launch, AFC as
   lanes load. For a Print Handy print, the operator-confirmed
