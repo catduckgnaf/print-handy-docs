@@ -81,7 +81,7 @@ jobs:
           fi
           python3 scripts/validate_wiki_decisions.py --reviews "$RUNNER_TEMP/wiki-reviews.json" --head "$HEAD_SHA" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
-        if: (startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
+        if: (startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
         run: |
           set -euo pipefail

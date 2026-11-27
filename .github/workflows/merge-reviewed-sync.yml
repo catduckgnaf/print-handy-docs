@@ -56,9 +56,10 @@ jobs:
               if [ -n "$run_id" ]; then gh run rerun "$run_id" --failed; continue; fi
             fi
           # The exact-head gate and build must both have succeeded on this SHA.
-          checks="$(gh api --paginate --slurp "repos/$GH_REPO/commits/$CHECKED_SHA/check-runs?per_page=100" | jq '[.[].check_runs[]]')"
+          gh api --paginate --slurp "repos/$GH_REPO/commits/$CHECKED_SHA/check-runs?per_page=100" | jq '[.[].check_runs[]]' > "$RUNNER_TEMP/checks.json"
+          gh api --paginate --slurp "repos/$GH_REPO/actions/workflows/docs-pr-check.yml/runs?head_sha=$CHECKED_SHA&per_page=100" | jq '[.[].workflow_runs[]]' > "$RUNNER_TEMP/runs.json"
           for name in 'Build documentation' 'docs-sync-approval'; do
-            result="$(jq -r --arg n "$name" '[.[] | select(.name == $n)] | sort_by(.started_at) | last | if . then .conclusion // "pending" else "missing" end' <<<"$checks")"
+            result="$(python3 scripts/select_pr_check.py "$RUNNER_TEMP/checks.json" "$RUNNER_TEMP/runs.json" "$name" "$CHECKED_SHA" "$number")"
             if [ "$result" != success ]; then
               echo "$name on $CHECKED_SHA is $result; no merge."
               continue 2
