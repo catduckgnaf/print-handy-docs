@@ -2,9 +2,10 @@ name: Docs auto-sync
 
 # The automated form of the manual sync in README.md ("How updates
 # work"): regenerate the site copies from catduckgnaf/print-handy/docs
-# at a given ref with scripts/sync-docs.py and open a PR with the diff.
-# Merging that PR is what publishes — the Deploy workflow rebuilds the
-# Pages site from main, never from a sync branch.
+# with scripts/sync-docs.py, verify it (drift check + site build), then open
+# a PR, merge it and dispatch the Pages deploy in the same run. No human
+# approval is needed. A new or removed guide, or a failed build, stops the
+# run and files a "Docs sync needed" issue instead.
 #
 # Triggers:
 # - workflow_dispatch: run by hand with an explicit ref (this is the
@@ -22,8 +23,8 @@ name: Docs auto-sync
 # are updated with fast-forward pushes; other runs use unique branches. If the site matches the ref,
 # the run ends as a clean no-op with no PR.
 #
-# This does not replace the Docs sync check or its "Docs sync needed"
-# issue: sync PRs require per-guide decisions for their exact head (see README.md).
+# The wiki check is informational: changed guides are listed on a
+# wiki-check issue after publishing. It never blocks the sync.
 
 on:
   workflow_dispatch:
@@ -42,6 +43,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: write
+  issues: write
 
 concurrency:
   group: docs-auto-sync
@@ -148,7 +150,7 @@ jobs:
           npm ci
           npm run docs:build
 
-      - name: Commit, push and open the sync PR
+      - name: Commit, open, merge and publish the sync
         if: steps.sync.outputs.changed == 'true'
         env:
           SYNC_REF: ${{ steps.ref.outputs.ref }}
@@ -167,33 +169,62 @@ jobs:
           git commit -m "Sync docs from print-handy $ref (auto-sync)"
           git push origin HEAD:"$branch"
           sync_sha="$(git rev-parse HEAD)"
-          gh workflow run docs-pr-check.yml --repo "$GITHUB_REPOSITORY" --ref "$branch" \
-            -f "sha=$sync_sha"
+          changed_paths="$(git diff --name-only origin/main...HEAD)"
+          mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv || true)"
           {
             python3 scripts/has-sync-pr.py --marker "$ref"
-            echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref) — the source of truth — produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
+            echo "Automated docs sync from [catduckgnaf/print-handy@$ref](https://github.com/catduckgnaf/print-handy/tree/$ref), the source of truth, produced by \`scripts/sync-docs.py\` (workflow: Docs auto-sync)."
             echo ""
             echo '```'
             cat "$RUNNER_TEMP/sync-report.txt"
             echo '```'
             echo ""
-            echo "Verified before opening: \`scripts/check-sync.sh\` reports NO DRIFT against that ref and \`npm run docs:build\` passes."
-            echo ""
-            echo "Notes for the reviewer:"
-            echo "- New or removed guides stop the sync before any file changes and require manual review."
-            echo "- Review the wiki for each changed guide and submit one PR review on this exact head containing all checked decisions below. PR body edits do not count. A new sync head requires a fresh assessment review."
-            echo ""
-            changed_paths="$(git diff --name-only origin/main...HEAD)"
-            mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
-            [ -n "$mapped_guides" ] || { echo 'No mapped guides to assess' >&2; exit 1; }
-            while IFS= read -r guide; do
-              printf -- '- [ ] `%s` — wiki decision: `wiki-updated` — <wiki page URL or revision> OR `wiki-not-needed`\n' "$guide"
-            done <<< "$mapped_guides"
-            echo "- The reviewed sync workflow merges only after the exact head passes build, approval and wiki checks, then dispatches Pages."
+            echo "Verified in the same run before merging: \`scripts/check-sync.sh\` reports no drift and \`npm run docs:build\` passes. This PR merges itself and publishes the site."
           } > pr-body.md
           if [ -n "$EXISTING_BRANCH" ]; then
             gh pr edit "$branch" --repo "$GITHUB_REPOSITORY" --body-file pr-body.md
           else
             gh pr create --repo "$GITHUB_REPOSITORY" --head "$branch" \
               --title "Docs sync: print-handy@$ref" --body-file pr-body.md
+          fi
+          # Already verified above (drift check + site build) on this exact commit.
+          gh pr merge "$branch" --repo "$GITHUB_REPOSITORY" --squash --delete-branch --match-head-commit "$sync_sha"
+          # GITHUB_TOKEN merges do not fire push workflows; dispatch the deploy explicitly.
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo "Merged and dispatched Pages deploy." >> "$GITHUB_STEP_SUMMARY"
+          # Wiki check: informational only, never blocks publishing.
+          if [ -n "$mapped_guides" ]; then
+            pr_url="$(gh pr view "$branch" --repo "$GITHUB_REPOSITORY" --json url --jq .url)"
+            {
+              echo "Docs were published from print-handy@$ref ($pr_url). Check whether the [wiki](https://github.com/catduckgnaf/print-handy/wiki) needs a matching update for:"
+              echo ""
+              printf '%s\n' "$mapped_guides" | sed '/^$/d; s/.*/- [ ] `&`/'
+            } > wiki-body.md
+            wiki_issue="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label wiki-check --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+            if [ -n "$wiki_issue" ]; then
+              gh issue comment "$wiki_issue" --repo "$GITHUB_REPOSITORY" --body-file wiki-body.md
+            else
+              gh label create wiki-check --repo "$GITHUB_REPOSITORY" --color c5def5 --description "Wiki may need an update after a docs sync" 2>/dev/null || true
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "Wiki check after docs sync" --label wiki-check --body-file wiki-body.md
+            fi
+          fi
+
+      - name: Close "Docs sync needed" after a clean sync
+        if: success()
+        run: |
+          set -euo pipefail
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Docs sync needed"' --json number,title --jq '.[] | select(.title == "Docs sync needed") | .number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "Resolved by Docs auto-sync run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID: the site now matches print-handy@main and has been published."
+          done
+
+      - name: Flag a sync that needs a human
+        if: failure()
+        run: |
+          set -euo pipefail
+          body="Docs auto-sync could not publish automatically: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID (usually a new or removed guide that needs a manifest entry, or a build failure)."
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Docs sync needed"' --json number,title --jq '.[] | select(.title == "Docs sync needed") | .number' | head -n 1)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Docs sync needed" --body "$body"
           fi

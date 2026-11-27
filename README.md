@@ -38,22 +38,22 @@ npm run docs:preview
 
 ## How updates work
 
-Re-syncing content follows the steps below — by hand, or with the
-Docs auto-sync workflow (see "Auto-sync" under "Keeping the site in
-sync") — but it always starts with the sync check, and it always ends
-with a wiki decision (next section).
+Publishing is automatic. When a guide changes on Print Handy `main`, that
+repo's `docs-main-dispatch` workflow sends a `print-handy-main`
+`repository_dispatch` here, and **Docs auto-sync** (below) copies the
+changed guides, verifies them, merges and deploys the site. A daily run and
+the daily **Docs sync check** catch anything a dispatch missed.
+
+The manual equivalent, if you ever need it:
 
 1. Run the sync check (below) to see exactly which pages drifted.
 2. Copy the changed user-facing guides from `print-handy/docs/` into `docs/` here, lowercasing file names.
 3. Rewrite inter-document links the same way as the existing pages (site-internal for published pages, absolute GitHub URLs for anything else in the Print Handy repo).
 4. Update the SHA-256 column for each re-synced page in `scripts/sync-manifest.tsv`.
 5. Run `scripts/check-sync.sh` (must report no drift) and `npm run docs:build` (fix any dead links it reports).
-6. Make the per-page wiki decision (below) and record it.
-7. Push to `main` — the Deploy workflow publishes the site to GitHub Pages.
+6. Push to `main`. The Deploy workflow publishes the site to GitHub Pages.
 
-## Keeping the site in sync — and the wiki check
-
-**Anything updated goes through a check to see if the wiki should be updated.**
+## Keeping the site in sync
 
 ### Drift detection
 
@@ -69,14 +69,9 @@ the *upstream* files rather than diffing the copies.
   Exit 0 means no drift; exit 1 means drift.
 - In CI: the **Docs sync check** workflow
   (`.github/workflows/docs-sync-check.yml`) runs the same script daily
-  and on `workflow_dispatch`, using only the workflow `GITHUB_TOKEN`
-  (`contents: read`, `issues: write`). The drift report is always written
-  to the workflow summary and uploaded as an artifact. If there is drift,
-  the workflow opens — or, if one is already open, comments on — a single
-  open issue titled **Docs sync needed** in this repo, listing exactly
-  which pages differ. If a `GITHUB_TOKEN` issue write were ever refused,
-  the run would fail at that step and the drift report would still be in
-  the summary/artifact — the check never reports a silent success.
+  and on `workflow_dispatch`. The drift report goes to the workflow
+  summary and an artifact. If there is drift it dispatches Docs auto-sync,
+  which publishes the fix.
 
 The version-specific `KLIPPER-014-AUDIT.md`, `OCTOPRINT-2.0.1-AUDIT.md`, and `OPENCREATOR-0.0.7.6-AUDIT.md` are maintainer source audits rather than operating guides. They remain available in the upstream repository with their hardware and version limitations; they are excluded from this user guide site.
 
@@ -93,45 +88,35 @@ unimplemented work; the site publishes shipped guides), `RELEASE-NOTES.md`,
 ### Auto-sync
 
 The **Docs auto-sync** workflow (`.github/workflows/docs-auto-sync.yml`)
-automates steps 1–5 above for a given Print Handy ref:
-`scripts/sync-docs.py` regenerates the site copies from upstream when
-only known guides have changed, verifies the result with
-`scripts/check-sync.sh` and a site build, and opens a PR with the diff —
-or updates the still-open sync PR for that ref. Newly added or removed
-guides stop before any site files are changed and require human review;
-they are never auto-published. Nothing publishes until the PR is merged;
-the Deploy workflow then rebuilds the site from `main` as usual.
+always syncs from upstream `main`. It runs on the `print-handy-main` and
+`print-handy-release` dispatches, daily at 07:47 UTC, and by hand from the
+Actions tab. Each run:
 
-Run it by hand from the Actions tab with an explicit ref (a release tag
-such as `2.1.6`, a branch or a SHA; blank means the latest release tag).
-It also runs when Print Handy publishes a release: that repo's
-post-release surfaces workflow sends a `repository_dispatch`
-(`print-handy-release`) here, provided the `DOCS_SYNC_TOKEN` secret is
-configured on the Print Handy repo — without it, the release's surfaces
-checklist issue records the skip and links the manual dispatch instead.
+1. regenerates the site copies with `scripts/sync-docs.py` (no drift means
+   a clean no-op);
+2. verifies them with `scripts/check-sync.sh` and `npm run docs:build`;
+3. opens a `docs-sync/` PR as a record, squash-merges it on that exact
+   commit and dispatches the Pages deploy;
+4. closes any open **Docs sync needed** issue.
 
-This workflow is the remedy the **release surfaces gate** in
-Print Handy's `docker-publish` workflow points at: a version publish
-fails while this site has drift against `docs/` at the release ref, and
-merging the sync PR the auto-sync opens is what unblocks it. (Nightly
-builds are never gated.) The wiki decision below is unchanged: a merged
-auto-sync PR does not close out a sync until the per-page wiki
-decisions are recorded.
+Newly added or removed upstream guides stop the run before any site file
+changes, because each one needs a manifest entry (publish or exclude). A
+stopped or failed run opens or comments on a single **Docs sync needed**
+issue with the run link. That is the only case that needs a human.
 
-### The wiki decision
+The release surfaces gate in Print Handy's `docker-publish` workflow fails
+while this site has drift at the release ref; auto-sync clears it on its
+own.
+
+### The wiki check
 
 The [Print Handy wiki](https://github.com/catduckgnaf/print-handy/wiki)
 (Home, `_Sidebar`, Discord-Bot-Setup and any pages linked from them) is a
-separate surface that points readers at these guides. For **each**
-changed or added guide in a sync, someone must check the wiki and record
-exactly one decision per guide — **wiki-updated** or **wiki-not-needed**.
-Copy the checklist template from the sync PR body into a single submitted
-PR review by a trusted reviewer, check each row, and submit that review on
-the exact sync head. Editing the PR body alone does not count. A new head
-needs a fresh review with assessments for every changed guide. Include a
-wiki URL or revision for `wiki-updated`; the wiki change must actually be
-pushed. The historical Docs sync needed issue remains separate and is not
-automatically closed.
+separate surface that points readers at these guides. After each
+published sync, auto-sync lists the changed guides on one open
+**Wiki check after docs sync** issue (label `wiki-check`). Tick the guides
+off, update the wiki where needed and close the issue. The wiki check never
+blocks publishing.
 
 The site is built with [VitePress](https://vitepress.dev/), modelled on the [openevse documentation site](https://firstof9.github.io/openevse/).
 
