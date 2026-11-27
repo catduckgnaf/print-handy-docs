@@ -36,10 +36,11 @@ Pick your problem. Print Handy runs on your hardware with no cloud of its own (y
 
 Start with [Find your printer](./printer-profiles.md#find-your-printer) to find your brand, model and firmware route, then [Printer support](./printer-support.md) for what support means and the hardware checklist. A registered model or passing tests do not prove your physical printer has been verified.
 
-- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [Reforge](./reforge.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
+- [ZMod](./zmod.md) · [Forge-X](./forgex.md) · [OpenCreator](./opencreator.md) · [OpenCreator 0.0.7.6 audit](https://github.com/catduckgnaf/print-handy/blob/main/docs/OPENCREATOR-0.0.7.6-AUDIT.md) · [Reforge](./reforge.md) · [Stock Flashforge](./flashforge-stock.md) · [AD5X best practices](./device-ad5x.md)
 - [Bambu Lab](./bambu-lab.md) · [Bambu connectivity details](https://github.com/catduckgnaf/print-handy/blob/main/docs/BAMBU-CONNECTIVITY.md) · [Prusa](./prusa.md) · [Elegoo](./elegoo.md)
 - [Creality](./creality.md) · [Qidi](./qidi.md) · [Sovol](./sovol.md)
 - [Anycubic](./anycubic.md) · [Snapmaker](./snapmaker.md) · [OctoPrint and Marlin](./octoprint-marlin.md)
+- [OctoPrint 2.0.1 REST contract audit](https://github.com/catduckgnaf/print-handy/blob/main/docs/OCTOPRINT-2.0.1-AUDIT.md): upstream API changes checked against the OctoPrint adapter, with unverified server and connector behavior called out.
 - [Device best practices](./device-best-practices.md)
 
 ## Troubleshooting
@@ -67,5 +68,6 @@ Start with [Find your printer](./printer-profiles.md#find-your-printer) to find 
 - [Documentation audit, 15 November 2026](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/DOCUMENTATION-AUDIT-2026-11-15.md): the README and printer-guide accuracy pass behind 2.3.4.
 - [3MF conversion evidence matrix](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/3MF-CONVERSION-EVIDENCE.md): the criterion-by-criterion evidence for the foreign 3MF conversion work.
 - [Geometry soundness audit](https://github.com/catduckgnaf/print-handy/blob/main/docs/history/GEOMETRY_AUDIT.md): what the sizing, rotation, mirroring, bed fit and support checks cover, and their known limits.
+- [Klipper 0.14 contract audit](https://github.com/catduckgnaf/print-handy/blob/main/docs/KLIPPER-014-AUDIT.md): upstream compatibility evidence, coordinate status, host/MCU detection scope and fork limitations.
 
 These versioned `docs/` pages are the source of truth. Document features with the code and identify wiki impact in the [contribution checklist](https://github.com/catduckgnaf/print-handy/blob/main/CONTRIBUTING.md#automated-pr-review-support). Use documentation for the checked-out revision; draft work is not shipped capability.

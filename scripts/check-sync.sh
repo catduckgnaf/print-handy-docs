@@ -27,7 +27,9 @@ UPSTREAM_REPO="https://github.com/catduckgnaf/print-handy.git"
 
 # Internal / research-only files in upstream docs/ that are deliberately
 # NOT published on the site. Keep in step with README.md.
-EXCLUDE=" AD5X-WALKTHROUGH.md BAMBU-A1-DOCKER.md LIVE-DEMO.md 3MF-REMAP-INVENTORY.md BAMBU-CONNECTIVITY.md DOCKER-117-ACCEPTANCE.md DOCKER-117-PROGRESS.md INTERNAL_RELEASE_NOTES.md ISSUE-126-TIMELAPSE.md KICAD-EVALUATION.md MULTI-PRINTER-DESIGN.md RELEASE-NOTES.md RENAME-MIGRATION.md REUSE-MAP.md hardcoded-inventory.md home-assistant-panic.md "
+# Version-specific source audits are evidence for maintainers, not operating
+# guides; keep them accessible in the upstream repository, with their limits.
+EXCLUDE=" KLIPPER-014-AUDIT.md OCTOPRINT-2.0.1-AUDIT.md OPENCREATOR-0.0.7.6-AUDIT.md AD5X-WALKTHROUGH.md BAMBU-A1-DOCKER.md LIVE-DEMO.md 3MF-REMAP-INVENTORY.md BAMBU-CONNECTIVITY.md DOCKER-117-ACCEPTANCE.md DOCKER-117-PROGRESS.md INTERNAL_RELEASE_NOTES.md ISSUE-126-TIMELAPSE.md KICAD-EVALUATION.md MULTI-PRINTER-DESIGN.md RELEASE-NOTES.md RENAME-MIGRATION.md REUSE-MAP.md hardcoded-inventory.md home-assistant-panic.md "
 
 cleanup=""
 if [ -n "${PRINT_HANDY_DIR:-}" ]; then
