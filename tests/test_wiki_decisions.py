@@ -46,6 +46,15 @@ class WikiDecisionValidationTests(unittest.TestCase):
                 "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n")
         self.assertTrue(any("duplicate wiki decision" in error for error in validate(body, ["GUIDE.md"])))
 
+    def test_guide_matching_ignores_path_and_case(self):
+        body = "- [x] `docs/Standalone.md` — wiki decision: `wiki-not-needed`\n"
+        self.assertEqual([], validate(body, ["STANDALONE.md"]))
+
+    def test_normalized_duplicate_decisions_are_rejected(self):
+        body = ("- [x] `docs/Standalone.md` — wiki decision: `wiki-not-needed`\n"
+                "- [x] `STANDALONE.MD` — wiki decision: `wiki-not-needed`\n")
+        self.assertTrue(any("duplicate wiki decision" in error for error in validate(body, ["standalone.md"])))
+
     def test_unrelated_issue_decisions_do_not_satisfy_guide(self):
         body = "- [x] `OTHER.md` — wiki decision: `wiki-not-needed`\n"
         self.assertTrue(any("missing explicit checked wiki decision" in error for error in validate(body, ["GUIDE.md"])))

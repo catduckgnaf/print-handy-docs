@@ -25,16 +25,22 @@ def valid_evidence(evidence: str) -> bool:
     )
 
 
+def normalize_guide(guide: str) -> str:
+    """Match source guide paths to site copies independent of path and case."""
+    return guide.replace("\\", "/").rsplit("/", 1)[-1].casefold()
+
+
 def validate(issue_body: str, guides: list[str]) -> list[str]:
     rows = {}
     for match in DECISION.finditer(issue_body):
         guide = match.group("guide")
-        if guide in rows:
+        key = normalize_guide(guide)
+        if key in rows:
             return [f"duplicate wiki decision for {guide}"]
-        rows[guide] = match.groupdict()
+        rows[key] = match.groupdict()
     errors = []
     for guide in guides:
-        row = rows.get(guide)
+        row = rows.get(normalize_guide(guide))
         if row is None:
             errors.append(f"missing explicit checked wiki decision for {guide}")
         elif row["decision"] == "wiki-updated" and not valid_evidence(row["evidence"] or ""):
