@@ -59,6 +59,9 @@ jobs:
     steps:
       - name: Checkout this docs repo
         uses: actions/checkout@v4
+        with:
+          # Existing sync branches may have diverged before main's tip.
+          fetch-depth: 0
 
       - name: Resolve the upstream ref
         id: ref

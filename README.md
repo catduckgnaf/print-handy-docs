@@ -124,11 +124,14 @@ The [Print Handy wiki](https://github.com/catduckgnaf/print-handy/wiki)
 (Home, `_Sidebar`, Discord-Bot-Setup and any pages linked from them) is a
 separate surface that points readers at these guides. For **each**
 changed or added guide in a sync, someone must check the wiki and record
-exactly one decision per page — **wiki-updated** or **wiki-not-needed** —
-in the sync PR checklist for its exact head. A new head needs a fresh
-assessment for every changed guide. Include a wiki URL or revision for
-`wiki-updated`; the wiki change must actually be pushed. The historical
-Docs sync needed issue remains separate and is not automatically closed.
+exactly one decision per guide — **wiki-updated** or **wiki-not-needed**.
+Copy the checklist template from the sync PR body into a single submitted
+PR review by a trusted reviewer, check each row, and submit that review on
+the exact sync head. Editing the PR body alone does not count. A new head
+needs a fresh review with assessments for every changed guide. Include a
+wiki URL or revision for `wiki-updated`; the wiki change must actually be
+pushed. The historical Docs sync needed issue remains separate and is not
+automatically closed.
 
 The site is built with [VitePress](https://vitepress.dev/), modelled on the [openevse documentation site](https://firstof9.github.io/openevse/).
 
