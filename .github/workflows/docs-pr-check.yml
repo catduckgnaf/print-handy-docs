@@ -19,7 +19,8 @@ permissions:
 jobs:
   docs-sync-approval:
     name: docs-sync-approval
-    if: startsWith(github.event.pull_request.head.ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]'
+    # Every docs-sync/ PR must prove exact-head duckcatgnaf approval, regardless of author.
+    if: startsWith(github.event.pull_request.head.ref, 'docs-sync/')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
