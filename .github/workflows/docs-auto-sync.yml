@@ -178,9 +178,8 @@ jobs:
             echo ""
             echo "Notes for the reviewer:"
             echo "- New or removed guides stop the sync before any file changes and require manual review."
-            echo "- Review the wiki for each changed guide and record exactly one checked decision below. A new sync head requires a fresh assessment."
+            echo "- Review the wiki for each changed guide and submit one PR review on this exact head containing all checked decisions below. PR body edits do not count. A new sync head requires a fresh assessment review."
             echo ""
-            echo "<!-- wiki-assessment-head: $sync_sha -->"
             changed_paths="$(git diff --name-only origin/main...HEAD)"
             mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
             [ -n "$mapped_guides" ] || { echo 'No mapped guides to assess' >&2; exit 1; }

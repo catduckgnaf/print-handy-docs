@@ -5,7 +5,7 @@ on:
     workflows: [Documentation PR checks]
     types: [completed]
   pull_request_review:
-    types: [submitted, dismissed]
+    types: [submitted, edited, dismissed]
   pull_request:
     types: [edited]
   schedule:
@@ -74,13 +74,13 @@ jobs:
             echo 'Unresolved review conversations; no merge.'
             continue
           fi
-          gh pr view "$number" --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
+          printf '%s\n' "$reviews" > "$RUNNER_TEMP/wiki-reviews.json"
           changed_paths="$(gh pr diff "$number" --name-only)"
           # Fail closed for a changed guide with no unique manifest mapping.
           mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
           mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
           [ "${#guides[@]}" -gt 0 ] || { echo 'No guide changes to validate; refusing merge.' >&2; exit 1; }
-          if ! python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --head "$CHECKED_SHA" --guides "${guides[@]}"; then continue; fi
+          if ! python3 scripts/validate_wiki_decisions.py --reviews "$RUNNER_TEMP/wiki-reviews.json" --head "$CHECKED_SHA" --guides "${guides[@]}"; then continue; fi
           # GitHub enforces rulesets and checks; the head match prevents racing a new push.
           gh pr merge "$number" --squash --match-head-commit "$CHECKED_SHA"
           # GITHUB_TOKEN merges do not trigger a push workflow. Explicitly dispatch

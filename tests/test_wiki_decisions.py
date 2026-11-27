@@ -3,17 +3,24 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from validate_wiki_decisions import validate, validate_head
+from validate_wiki_decisions import validate, validate_reviews
+
+
+def review(head, body, state="COMMENTED", association="COLLABORATOR"):
+    return {"commit_id": head, "body": body, "state": state,
+            "author_association": association, "submitted_at": "2026-01-01T00:00:00Z"}
 
 
 class WikiDecisionValidationTests(unittest.TestCase):
-    def test_assessment_is_bound_to_exact_head(self):
-        head = "a" * 40
-        marker = f"<!-- wiki-assessment-head: {head} -->"
-        self.assertEqual([], validate_head(marker, head))
-        for body, requested in ((marker, "b" * 40), ("", head), (marker + "\n" + marker, head)):
-            with self.subTest(body=body, requested=requested):
-                self.assertTrue(validate_head(body, requested))
+    def test_review_provenance_rejects_marker_only_refresh(self):
+        old, new = 'a' * 40, 'b' * 40
+        row = '- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n'
+        forged_body = f'<!-- wiki-assessment-head: {new} -->\n' + row
+        self.assertTrue(validate_reviews([review(old, forged_body)], new, ['GUIDE.md']))
+        self.assertEqual([], validate_reviews([review(new, row)], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, state='DISMISSED')], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, association='NONE')], new, ['GUIDE.md']))
+        self.assertTrue(validate_reviews([review(new, row, state='CHANGES_REQUESTED')], new, ['GUIDE.md']))
 
     def test_new_cycle_needs_each_fresh_guide_decision(self):
         old = "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n"

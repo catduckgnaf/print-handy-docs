@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   pull_request_review:
-    types: [submitted]
+    types: [submitted, edited, dismissed]
   workflow_dispatch:
     inputs:
       sha:
@@ -70,8 +70,8 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
-          # Decisions are maintained on this PR and bound to this exact head.
-          gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
+          # GitHub review metadata binds the assessment to the reviewed commit.
+          gh api --paginate --slurp "repos/$GH_REPO/pulls/$PR_NUMBER/reviews?per_page=100" | jq 'add // []' > "$RUNNER_TEMP/wiki-reviews.json"
           changed_paths="$(gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only)"
           mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
           mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
@@ -79,7 +79,7 @@ jobs:
             echo "No changed Markdown guides found in this docs-sync PR; refusing to skip wiki decision validation." >&2
             exit 1
           fi
-          python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --head "$HEAD_SHA" --guides "${guides[@]}"
+          python3 scripts/validate_wiki_decisions.py --reviews "$RUNNER_TEMP/wiki-reviews.json" --head "$HEAD_SHA" --guides "${guides[@]}"
       - name: Check sync PR against its recorded upstream commit
         if: (startsWith(github.head_ref, 'docs-sync/') && github.event.pull_request.user.login == 'github-actions[bot]') || (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/docs-sync/'))
         shell: bash
