@@ -15,7 +15,7 @@ name: Docs auto-sync
 #   carries the release tag.
 #
 # - schedule: sync upstream main daily as a fallback for missed dispatches.
-# - repository_dispatch "print-handy-main": sync the ref in the payload.
+# - repository_dispatch "print-handy-main": ignore payload refs and sync main.
 #
 # The published site always tracks upstream main, including release triggers.
 # Existing moving-ref sync PR branches
