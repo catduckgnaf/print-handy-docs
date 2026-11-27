@@ -17,8 +17,8 @@ name: Docs auto-sync
 # - schedule: sync upstream main daily as a fallback for missed dispatches.
 # - repository_dispatch "print-handy-main": sync the ref in the payload.
 #
-# With no ref from a manual or release trigger, the latest published release
-# tag is used. Scheduled runs use main. Existing moving-ref sync PR branches
+# The published site always tracks upstream main, including release triggers.
+# Existing moving-ref sync PR branches
 # are updated with fast-forward pushes; other runs use unique branches. If the site matches the ref,
 # the run ends as a clean no-op with no PR.
 #
@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Print Handy ref to sync docs from (tag, branch or SHA; blank = latest release tag)"
+        description: "Published source is main; non-main manual refs are rejected"
         type: string
         required: false
         default: ""
@@ -65,14 +65,13 @@ jobs:
         id: ref
         run: |
           set -euo pipefail
-          ref="${INPUT_REF:-$PAYLOAD_REF}"
-          if [ -z "$ref" ]; then
-            if [ "${{ github.event_name }}" = schedule ]; then
-              ref=main
-            else
-              ref="$(gh api repos/catduckgnaf/print-handy/releases/latest --jq .tag_name)"
-            fi
+          if [ "${{ github.event_name }}" = workflow_dispatch ] && [ -n "$INPUT_REF" ] && [ "$INPUT_REF" != main ]; then
+            echo 'Only upstream main can be published to the main-tracking site.' >&2
+            exit 1
           fi
+          # A release payload names a tag, but the public site tracks main.
+          # Ignore payload refs rather than allowing an old release to roll back docs.
+          ref=main
           [[ "$ref" =~ ^[A-Za-z0-9._/-]+$ ]] || {
             echo "Ref contains unexpected characters: $ref" >&2
             exit 1
