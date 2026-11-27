@@ -78,6 +78,8 @@ the *upstream* files rather than diffing the copies.
   the run would fail at that step and the drift report would still be in
   the summary/artifact — the check never reports a silent success.
 
+The version-specific `KLIPPER-014-AUDIT.md`, `OCTOPRINT-2.0.1-AUDIT.md`, and `OPENCREATOR-0.0.7.6-AUDIT.md` are maintainer source audits rather than operating guides. They remain available in the upstream repository with their hardware and version limitations; they are excluded from this user guide site.
+
 Excluded upstream files (internal/research-only or retired walkthroughs, not published here) are
 listed in `scripts/check-sync.sh`: `3MF-REMAP-INVENTORY.md` (an
 implementation inventory, not a user guide), `BAMBU-CONNECTIVITY.md`,
