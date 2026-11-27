@@ -3,10 +3,25 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from validate_wiki_decisions import validate
+from validate_wiki_decisions import validate, validate_head
 
 
 class WikiDecisionValidationTests(unittest.TestCase):
+    def test_assessment_is_bound_to_exact_head(self):
+        head = "a" * 40
+        marker = f"<!-- wiki-assessment-head: {head} -->"
+        self.assertEqual([], validate_head(marker, head))
+        for body, requested in ((marker, "b" * 40), ("", head), (marker + "\n" + marker, head)):
+            with self.subTest(body=body, requested=requested):
+                self.assertTrue(validate_head(body, requested))
+
+    def test_new_cycle_needs_each_fresh_guide_decision(self):
+        old = "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n"
+        fresh = "- [ ] `GUIDE.md` — wiki decision: `wiki-updated` — <wiki page URL or revision> OR `wiki-not-needed`\n"
+        self.assertEqual([], validate(old, ["GUIDE.md"]))
+        self.assertTrue(validate(fresh, ["GUIDE.md"]))
+        self.assertTrue(validate(old, ["GUIDE.md", "OTHER.md"]))
+
     def test_only_explicit_checked_decisions_pass(self):
         body = "- [x] `GUIDE.md` — wiki decision: `wiki-not-needed`\n"
         self.assertEqual([], validate(body, ["GUIDE.md"]))

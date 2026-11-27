@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate explicit per-guide wiki decisions recorded on Docs sync needed."""
+"""Validate explicit per-guide wiki decisions recorded for the exact sync PR head."""
 import argparse
 import re
 import sys
@@ -48,12 +48,22 @@ def validate(issue_body: str, guides: list[str]) -> list[str]:
     return errors
 
 
+def validate_head(body: str, head: str) -> list[str]:
+    """Bind the entire assessment to one immutable sync PR commit."""
+    markers = re.findall(r"^<!-- wiki-assessment-head: ([0-9a-f]{40}) -->$", body, re.MULTILINE)
+    if not re.fullmatch(r"[0-9a-f]{40}", head) or markers != [head]:
+        return ["missing, duplicate, or stale wiki assessment head"]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--issue-body", required=True)
+    parser.add_argument("--head", required=True)
     parser.add_argument("--guides", nargs="*", default=[])
     args = parser.parse_args()
-    errors = validate(args.issue_body, args.guides)
+    body = open(args.issue_body, encoding="utf-8").read()
+    errors = validate_head(body, args.head) + validate(body, args.guides)
     if errors:
         print("Wiki decision validation failed:", file=sys.stderr)
         print("\n".join(f"- {error}" for error in errors), file=sys.stderr)

@@ -6,7 +6,7 @@ on:
     types: [completed]
   pull_request_review:
     types: [submitted, dismissed]
-  issues:
+  pull_request:
     types: [edited]
   schedule:
     - cron: '23 * * * *'
@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   merge:
-    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || github.event_name == 'pull_request_review' || (github.event_name == 'issues' && github.event.issue.number == 61) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || github.event_name == 'pull_request_review' || github.event_name == 'pull_request' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -46,7 +46,7 @@ jobs:
           while IFS=$'\t' read -r number CHECKED_SHA; do
             [[ "$CHECKED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
             if [ "$EVENT_NAME" = workflow_run ] && [ "$CHECKED_SHA" != "$EVENT_SHA" ]; then continue; fi
-            if [ "$EVENT_NAME" = pull_request_review ] && [ "$number" != "$EVENT_PR" ]; then continue; fi
+            if { [ "$EVENT_NAME" = pull_request_review ] || [ "$EVENT_NAME" = pull_request ]; } && [ "$number" != "$EVENT_PR" ]; then continue; fi
             export CHECKED_SHA
             # A late wiki decision may have made the prior PR build fail. Rerun
             # that exact PR run so its wiki and drift checks run again, rather
@@ -74,13 +74,13 @@ jobs:
             echo 'Unresolved review conversations; no merge.'
             continue
           fi
-          gh issue view 61 --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
+          gh pr view "$number" --json body --jq .body > "$RUNNER_TEMP/wiki-decisions.md"
           changed_paths="$(gh pr diff "$number" --name-only)"
           # Fail closed for a changed guide with no unique manifest mapping.
           mapped_guides="$(printf '%s\n' "$changed_paths" | python3 scripts/map_sync_guides.py scripts/sync-manifest.tsv)"
           mapfile -t guides < <(printf '%s\n' "$mapped_guides" | sed '/^$/d')
           [ "${#guides[@]}" -gt 0 ] || { echo 'No guide changes to validate; refusing merge.' >&2; exit 1; }
-          if ! python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --guides "${guides[@]}"; then continue; fi
+          if ! python3 scripts/validate_wiki_decisions.py --issue-body "$RUNNER_TEMP/wiki-decisions.md" --head "$CHECKED_SHA" --guides "${guides[@]}"; then continue; fi
           # GitHub enforces rulesets and checks; the head match prevents racing a new push.
           gh pr merge "$number" --squash --match-head-commit "$CHECKED_SHA"
           # GITHUB_TOKEN merges do not trigger a push workflow. Explicitly dispatch

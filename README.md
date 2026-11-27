@@ -125,9 +125,10 @@ The [Print Handy wiki](https://github.com/catduckgnaf/print-handy/wiki)
 separate surface that points readers at these guides. For **each**
 changed or added guide in a sync, someone must check the wiki and record
 exactly one decision per page — **wiki-updated** or **wiki-not-needed** —
-in the Docs sync needed issue. That issue must not be closed until every
-drifted page has its wiki decision recorded (and any `wiki-updated`
-change has actually been pushed to the wiki).
+in the sync PR checklist for its exact head. A new head needs a fresh
+assessment for every changed guide. Include a wiki URL or revision for
+`wiki-updated`; the wiki change must actually be pushed. The historical
+Docs sync needed issue remains separate and is not automatically closed.
 
 The site is built with [VitePress](https://vitepress.dev/), modelled on the [openevse documentation site](https://firstof9.github.io/openevse/).
 
